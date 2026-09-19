@@ -16,13 +16,13 @@ describe("getAssetPath", () => {
 			location: { protocol: "http:" },
 			electronAPI: {
 				getAssetBasePath: vi.fn(
-					async () => "file:///Applications/Recordly.app/Contents/Resources/assets/",
+					async () => "file:///Applications/Klyra.app/Contents/Resources/assets/",
 				),
 			},
 		});
 
 		await expect(getAssetPath("wallpapers/tahoe-light.jpg")).resolves.toBe(
-			"file:///Applications/Recordly.app/Contents/Resources/assets/wallpapers/tahoe-light.jpg",
+			"file:///Applications/Klyra.app/Contents/Resources/assets/wallpapers/tahoe-light.jpg",
 		);
 	});
 

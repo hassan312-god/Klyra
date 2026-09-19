@@ -187,6 +187,26 @@ export function MorePopover({
 					v{appVersion}
 				</div>
 			)}
+			<div
+				style={{
+					padding: "0 12px 8px",
+					fontSize: 10,
+					color: "var(--launch-text-muted)",
+					textAlign: "center",
+					userSelect: "text",
+				}}
+			>
+				Klyra is a fork of{" "}
+				<a
+					href="https://github.com/webadderallorg/Recordly"
+					target="_blank"
+					rel="noreferrer"
+					style={{ color: "inherit" }}
+				>
+					Recordly
+				</a>
+				, licensed under AGPLv3.
+			</div>
 		</HudPopover>
 	);
 }

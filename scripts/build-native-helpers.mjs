@@ -5,7 +5,7 @@ import path from "node:path";
 
 const projectRoot = process.cwd();
 const nativeRoot = path.join(projectRoot, "electron", "native");
-const moduleCacheRoot = path.join(os.tmpdir(), "recordly-swift-module-cache");
+const moduleCacheRoot = path.join(os.tmpdir(), "klyra-swift-module-cache");
 
 if (process.platform !== "darwin") {
 	console.log("[build-native-helpers] Skipping: host platform is not macOS.");
@@ -28,19 +28,19 @@ function getTargetConfigs() {
 const helpers = [
 	{
 		source: "ScreenCaptureKitRecorder.swift",
-		output: "recordly-screencapturekit-helper",
+		output: "klyra-screencapturekit-helper",
 	},
 	{
 		source: "ScreenCaptureKitWindowList.swift",
-		output: "recordly-window-list",
+		output: "klyra-window-list",
 	},
 	{
 		source: "SystemCursorAssets.swift",
-		output: "recordly-system-cursors",
+		output: "klyra-system-cursors",
 	},
 	{
 		source: "NativeCursorMonitor.swift",
-		output: "recordly-native-cursor-monitor",
+		output: "klyra-native-cursor-monitor",
 	},
 ];
 

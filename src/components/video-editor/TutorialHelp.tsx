@@ -24,9 +24,9 @@ import { formatBinding, SHORTCUT_ACTIONS, SHORTCUT_LABELS } from "@/lib/shortcut
 import { formatShortcut } from "@/utils/platformUtils";
 import { toast } from "sonner";
 
-export const RECORDLY_ISSUES_URL = "https://github.com/webadderallorg/Recordly/issues";
-const RECORDLY_DISCORD_URL = "https://discord.gg/sdv2FBVNgE";
-const RECORDLY_X_URL = "https://x.com/webadderall";
+export const KLYRA_ISSUES_URL = "https://github.com/hassan312-god/record/issues";
+const KLYRA_DISCORD_URL = "https://discord.gg/sdv2FBVNgE";
+const KLYRA_X_URL = "https://x.com/hassan312-god";
 const CONTACT_EMAIL = "youngchen3442@gmail.com";
 export const APP_HEADER_ACTION_BUTTON_CLASS =
 	"h-7 px-2 text-xs text-muted-foreground hover:bg-foreground/10 hover:text-foreground transition-all gap-1.5";
@@ -67,7 +67,7 @@ export function DiscordLinkButton() {
 			size="sm"
 			onClick={() =>
 				void openExternalLink(
-					RECORDLY_DISCORD_URL,
+					KLYRA_DISCORD_URL,
 					t("feedback.openFailed", "Failed to open link."),
 				)
 			}
@@ -140,7 +140,7 @@ export function FeedbackDialog() {
 									{t("feedback.xLabel", "X")}
 								</p>
 								<p className="mt-1 text-sm font-medium text-foreground">
-									@webadderall
+									@hassan312-god
 								</p>
 							</div>
 							<Button
@@ -148,7 +148,7 @@ export function FeedbackDialog() {
 								variant="outline"
 								onClick={() =>
 									void openExternalLink(
-										RECORDLY_X_URL,
+										KLYRA_X_URL,
 										t("feedback.openFailed", "Failed to open link."),
 									)
 								}
@@ -163,7 +163,7 @@ export function FeedbackDialog() {
 						variant="outline"
 						onClick={() =>
 							void openExternalLink(
-								RECORDLY_ISSUES_URL,
+								KLYRA_ISSUES_URL,
 								t("feedback.openFailed", "Failed to open link."),
 							)
 						}
