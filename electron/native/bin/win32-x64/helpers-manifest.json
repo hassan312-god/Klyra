@@ -17,15 +17,15 @@
 			"sourceFingerprint": "45bb72e4039e061a354af87317d7c42ec3d2118369b3f4379046ff497b701e72",
 			"updatedAt": "2026-07-11T11:58:56.534Z"
 		},
-		"recordly-gpu-export": {
-			"binaryName": "recordly-gpu-export.exe",
+		"klyra-gpu-export": {
+			"binaryName": "klyra-gpu-export.exe",
 			"binarySha256": "49a2ac588206305d0129e6263ce4be49780c50a9dc4efc7df63aad09178a919f",
 			"sourceDir": "electron/native/gpu-export-probe",
 			"sourceFingerprint": "37a5842eba63cdeccfddd02cc278a98207248fb0aa6b56153fb85ed152c908c1",
 			"updatedAt": "2026-07-11T11:58:51.659Z"
 		},
-		"recordly-nvidia-cuda-compositor": {
-			"binaryName": "recordly-nvidia-cuda-compositor.exe",
+		"klyra-nvidia-cuda-compositor": {
+			"binaryName": "klyra-nvidia-cuda-compositor.exe",
 			"binarySha256": "250a3f8cac7c6ea38a873434d23d4b2be7d6555e42cc0b405aa26f774169159c",
 			"sourceDir": "electron/native/nvidia-cuda-compositor",
 			"sourceFingerprint": "de1219228ce326e96d1f4815a3763b10d5f235cc1286bc6542c99707a85d5947",

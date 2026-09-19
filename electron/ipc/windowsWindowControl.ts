@@ -10,20 +10,20 @@ export async function bringWindowsWindowForward(windowId: number): Promise<void>
 	const script = [
 		'Add-Type -TypeDefinition @"',
 		"using System; using System.Runtime.InteropServices;",
-		"public static class RecordlyForegroundWindow {",
+		"public static class KlyraForegroundWindow {",
 		'  [DllImport("user32.dll")] public static extern bool ShowWindowAsync(IntPtr hWnd, int nCmdShow);',
 		'  [DllImport("user32.dll")] public static extern bool IsIconic(IntPtr hWnd);',
 		'  [DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr hWnd);',
 		"}",
 		'"@',
-		"$handle = [IntPtr][Int64]$env:RECORDLY_WINDOW_ID",
-		"if ([RecordlyForegroundWindow]::IsIconic($handle)) { [RecordlyForegroundWindow]::ShowWindowAsync($handle, 9) | Out-Null }",
-		"[RecordlyForegroundWindow]::SetForegroundWindow($handle) | Out-Null",
+		"$handle = [IntPtr][Int64]$env:KLYRA_WINDOW_ID",
+		"if ([KlyraForegroundWindow]::IsIconic($handle)) { [KlyraForegroundWindow]::ShowWindowAsync($handle, 9) | Out-Null }",
+		"[KlyraForegroundWindow]::SetForegroundWindow($handle) | Out-Null",
 	].join("\n");
 
 	await execFileAsync("powershell.exe", ["-NoProfile", "-Command", script], {
 		timeout: 5000,
-		env: { ...process.env, RECORDLY_WINDOW_ID: String(windowId) },
+		env: { ...process.env, KLYRA_WINDOW_ID: String(windowId) },
 	});
 }
 
@@ -37,12 +37,12 @@ export async function resolveWindowsWindowBounds(
 	if (!windowId && !windowTitle) return null;
 
 	const script = [
-		"$windowId = $env:RECORDLY_WINDOW_ID",
-		"$windowTitle = $env:RECORDLY_WINDOW_TITLE",
+		"$windowId = $env:KLYRA_WINDOW_ID",
+		"$windowTitle = $env:KLYRA_WINDOW_TITLE",
 		'Add-Type -TypeDefinition @"',
 		"using System;",
 		"using System.Runtime.InteropServices;",
-		"public static class RecordlyWindowBounds {",
+		"public static class KlyraWindowBounds {",
 		"  [StructLayout(LayoutKind.Sequential)]",
 		"  public struct RECT {",
 		"    public int Left;",
@@ -67,10 +67,10 @@ export async function resolveWindowsWindowBounds(
 		"  if ($matchingProcess) { $handle = $matchingProcess.MainWindowHandle.ToInt64() }",
 		"}",
 		"if ($handle -le 0) { exit 1 }",
-		"$rect = New-Object RecordlyWindowBounds+RECT",
-		"[RecordlyWindowBounds]::SetThreadDpiAwarenessContext([IntPtr](-4)) | Out-Null",
-		"$dwmResult = [RecordlyWindowBounds]::DwmGetWindowAttribute([IntPtr]$handle, 9, [ref]$rect, [Runtime.InteropServices.Marshal]::SizeOf($rect))",
-		"if ($dwmResult -ne 0 -and -not [RecordlyWindowBounds]::GetWindowRect([IntPtr]$handle, [ref]$rect)) { exit 1 }",
+		"$rect = New-Object KlyraWindowBounds+RECT",
+		"[KlyraWindowBounds]::SetThreadDpiAwarenessContext([IntPtr](-4)) | Out-Null",
+		"$dwmResult = [KlyraWindowBounds]::DwmGetWindowAttribute([IntPtr]$handle, 9, [ref]$rect, [Runtime.InteropServices.Marshal]::SizeOf($rect))",
+		"if ($dwmResult -ne 0 -and -not [KlyraWindowBounds]::GetWindowRect([IntPtr]$handle, [ref]$rect)) { exit 1 }",
 		"@{ x = $rect.Left; y = $rect.Top; width = $rect.Right - $rect.Left; height = $rect.Bottom - $rect.Top } | ConvertTo-Json -Compress",
 	].join("\n");
 
@@ -82,8 +82,8 @@ export async function resolveWindowsWindowBounds(
 				timeout: 5000,
 				env: {
 					...process.env,
-					RECORDLY_WINDOW_ID: String(windowId ?? ""),
-					RECORDLY_WINDOW_TITLE: windowTitle,
+					KLYRA_WINDOW_ID: String(windowId ?? ""),
+					KLYRA_WINDOW_TITLE: windowTitle,
 				},
 			},
 		);

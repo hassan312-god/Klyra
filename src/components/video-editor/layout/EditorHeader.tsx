@@ -170,7 +170,7 @@ export function EditorHeader(props: Props) {
 							aria-label={t("editor.project.renameInput", "Project name")}
 						/>
 						<span className="shrink-0 text-xs font-medium tracking-tight text-muted-foreground/70">
-							.recordly
+							.klyra
 						</span>
 					</form>
 				) : (
@@ -188,7 +188,7 @@ export function EditorHeader(props: Props) {
 							{projectDisplayName}
 						</span>
 						<span className="shrink-0 text-xs font-medium tracking-tight text-muted-foreground/70">
-							.recordly
+							.klyra
 						</span>
 					</button>
 				)}
