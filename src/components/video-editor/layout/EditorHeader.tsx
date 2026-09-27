@@ -12,7 +12,7 @@ import type { useExportSettings } from "../export/useExportSettings";
 import type { useExportStatusViewModel } from "../export/useExportStatusViewModel";
 import type { useVideoEditorPresets } from "../presets/useVideoEditorPresets";
 import type { useProjectState } from "../state/useProjectState";
-import { APP_HEADER_ICON_BUTTON_CLASS, DiscordLinkButton, FeedbackDialog } from "../TutorialHelp";
+import { APP_HEADER_ICON_BUTTON_CLASS, FeedbackDialog } from "../TutorialHelp";
 import { EditorExportMenu } from "./EditorExportMenu";
 import { EditorPresetMenu } from "./EditorPresetMenu";
 
@@ -111,7 +111,6 @@ export function EditorHeader(props: Props) {
 				>
 					<FolderOpen className="h-4 w-4" />
 				</Button>
-				<DiscordLinkButton />
 				<FeedbackDialog />
 				<div className="ml-1 h-5 w-px bg-foreground/10" />
 				<Button

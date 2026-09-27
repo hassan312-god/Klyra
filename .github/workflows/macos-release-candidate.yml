@@ -41,7 +41,7 @@ jobs:
           set -euo pipefail
 
           if [[ "${GITHUB_REPOSITORY,,}" != "hassan312-god/klyra" ]]; then
-            echo "This workflow may run only in hassan312-god/record."
+            echo "This workflow may run only in hassan312-god/Klyra."
             exit 1
           fi
 

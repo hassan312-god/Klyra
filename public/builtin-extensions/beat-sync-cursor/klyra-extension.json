@@ -1,0 +1,11 @@
+{
+	"id": "dev.klyra.beat-sync-cursor",
+	"name": "Beat Sync Cursor",
+	"version": "1.0.0",
+	"description": "Pulses a glow around the cursor on every beat of your background music. The pulse is computed from the video time, so preview and export always match.",
+	"author": "Klyra",
+	"license": "AGPL-3.0",
+	"icon": "MusicNotes",
+	"main": "index.js",
+	"permissions": ["render", "cursor", "ui"]
+}

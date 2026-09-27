@@ -76,6 +76,7 @@ export function EditorVideoPreview({
 			onPlayStateChange={setIsPlaying}
 			onError={setError}
 			wallpaper={appearance.wallpaper}
+			frame={appearance.frame}
 			zoomRegions={effectiveZoomRegions}
 			selectedZoomId={timeline.selectedZoomId}
 			isPlaying={isPlaying}

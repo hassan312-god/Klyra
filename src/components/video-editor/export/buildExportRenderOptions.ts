@@ -35,6 +35,7 @@ export function buildExportRenderOptions({
 	return {
 		clipRegions: timeline.clipRegions,
 		wallpaper: appearance.wallpaper,
+		frame: appearance.frame,
 		trimRegions: timeline.trimRegions,
 		speedRegions: effectiveSpeedRegions,
 		showShadow: shadowIntensity > 0,

@@ -55,6 +55,7 @@ export interface CursorVisualSettings {
 	style: CursorStyle;
 }
 
+// Extension-contributed cursor styles use arbitrary string ids.
 export type CursorStyle =
 	| "macos"
 	| "tahoe"

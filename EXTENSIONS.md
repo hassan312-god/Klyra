@@ -1,6 +1,6 @@
 # Klyra Extension API
 
-Go to https://www.marketplace.klyra.dev/extensions for full, regularly updated documentation
+Klyra ships with built-in extensions (Beat Sync Cursor, Spotlight, Watermark, Intro Title) in `public/builtin-extensions/`; read them as working examples. Extensions written for Recordly (`recordly-extension.json`) load too.
 
 Klyra extensions run in the editor renderer and use a permission-gated host API. They can draw into the render pipeline, react to playback and export events, register cursor effects, add settings panels, and contribute packaged assets such as frames, wallpapers, and cursor styles.
 

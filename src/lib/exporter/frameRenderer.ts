@@ -61,6 +61,17 @@ import {
 } from "@/components/video-editor/webcamOverlay";
 import { getAssetPath, getExportableVideoUrl, getRenderableAssetUrl } from "@/lib/assetPath";
 import { getWebcamShadowFilter } from "@/lib/exporter/shadowProfile";
+import { extensionHost } from "@/lib/extensions";
+import {
+	mapCursorToCanvasNormalized,
+	mapSmoothedCursorToCanvasNormalized,
+} from "@/lib/extensions/cursorCoordinates";
+import {
+	executeExtensionCursorEffects,
+	executeExtensionRenderHooks,
+	notifyCursorInteraction,
+} from "@/lib/extensions/renderHooks";
+import { applyCanvasSceneTransform } from "@/lib/extensions/sceneTransform";
 import { drawSquircleOnCanvas, drawSquircleOnGraphics } from "@/lib/geometry/squircle";
 import {
 	clampMediaTimeToDuration,
@@ -75,7 +86,6 @@ import { renderAnnotations } from "./annotationRenderer";
 import { renderCaptions } from "./captionRenderer";
 import { ForwardFrameSource } from "./forwardFrameSource";
 import { resolveMediaElementSource } from "./localMediaSource";
-
 
 interface FrameRenderConfig {
 	timelineEffects?: boolean;
@@ -133,6 +143,7 @@ interface FrameRenderConfig {
 	cursorClickBounce?: number;
 	cursorClickBounceDuration?: number;
 	cursorSway?: number;
+	frame?: string | null;
 }
 
 interface AnimationState {
@@ -265,6 +276,10 @@ export class FrameRenderer {
 	private webcamBubbleCtx: CanvasRenderingContext2D | null = null;
 	private lastSyncedWebcamTime: number | null = null;
 	private cleanupWebcamSource: (() => void) | null = null;
+	private frameImage: HTMLImageElement | null = null;
+	private frameInsets: { top: number; right: number; bottom: number; left: number } | null = null;
+	private frameDraw: ((ctx: CanvasRenderingContext2D, w: number, h: number) => void) | null =
+		null;
 
 	constructor(config: FrameRenderConfig) {
 		this.config = config;
@@ -429,6 +444,7 @@ export class FrameRenderer {
 		// Setup background (render separately, not in PixiJS)
 		await this.setupBackground();
 		await this.setupWebcamSource();
+		await this.setupFrame();
 
 		if ((this.config.zoomMotionBlur ?? 0) > 0) {
 			this.zoomBlurFilter = new ZoomBlurFilter({ strength: 0, maxKernelSize: 13 });
@@ -1378,6 +1394,37 @@ export class FrameRenderer {
 		}
 	}
 
+	private async setupFrame(): Promise<void> {
+		const frameId = this.config.frame;
+		if (!frameId) return;
+
+		const { extensionHost } = await import("@/lib/extensions/extensionHost");
+		const frames = extensionHost.getFrames();
+		const frame = frames.find((f) => f.id === frameId);
+		if (!frame) {
+			console.warn(`[FrameRenderer] Device frame "${frameId}" not found`);
+			return;
+		}
+
+		this.frameInsets = frame.screenInsets;
+
+		if (frame.draw) {
+			// Prefer draw function — renders at export resolution, no bitmap scaling
+			this.frameDraw = frame.draw;
+			return;
+		}
+
+		const img = new Image();
+		img.crossOrigin = "anonymous";
+		await new Promise<void>((resolve, reject) => {
+			img.onload = () => resolve();
+			img.onerror = () => reject(new Error(`Failed to load device frame image: ${frameId}`));
+			img.src = frame.filePath;
+		});
+
+		this.frameImage = img;
+	}
+
 	async renderFrame(
 		videoFrame: VideoFrame | null,
 		timestamp: number,
@@ -1449,6 +1496,25 @@ export class FrameRenderer {
 			);
 		}
 
+		const smoothedCursor = mapSmoothedCursorToCanvasNormalized(
+			this.cursorOverlay?.getSmoothedCursorSnapshot() ?? null,
+			{
+				maskRect: layoutCache.maskRect,
+				canvasWidth: this.config.width,
+				canvasHeight: this.config.height,
+			},
+		);
+		extensionHost.setSmoothedCursor(
+			smoothedCursor
+				? {
+						timeMs,
+						cx: smoothedCursor.cx,
+						cy: smoothedCursor.cy,
+						trail: smoothedCursor.trail,
+					}
+				: null,
+		);
+
 		const TICKS_PER_FRAME = 1;
 
 		for (let i = 0; i < TICKS_PER_FRAME; i++) {
@@ -1484,6 +1550,11 @@ export class FrameRenderer {
 		this.compositeWithShadows();
 
 		// Draw device frame overlay on top of video content
+		this.drawFrame({
+			scale: this.animationState.appliedScale,
+			x: this.animationState.x,
+			y: this.animationState.y,
+		});
 
 		// Render annotations on top if present
 		if (
@@ -1528,6 +1599,149 @@ export class FrameRenderer {
 				timestamp / 1000,
 			);
 		}
+
+		// Extension render hooks — run after all built-in rendering
+		if (this.compositeCtx) {
+			const maskRect = this.layoutCache?.maskRect;
+			const hookParams = {
+				width: this.config.width,
+				height: this.config.height,
+				timeMs,
+				durationMs: extensionHost.getVideoInfoSnapshot()?.durationMs ?? 0,
+				cursor: smoothedCursor
+					? {
+							cx: smoothedCursor.cx,
+							cy: smoothedCursor.cy,
+							interactionType: this.getCursorPosition(cursorTimeMs)?.interactionType,
+						}
+					: this.getCursorPosition(cursorTimeMs),
+				smoothedCursor,
+				videoLayout: maskRect
+					? {
+							maskRect: {
+								x: maskRect.x,
+								y: maskRect.y,
+								width: maskRect.width,
+								height: maskRect.height,
+							},
+							borderRadius: this.config.borderRadius ?? 0,
+							padding: this.config.padding ?? 0,
+						}
+					: undefined,
+				zoom: {
+					scale: this.animationState.scale,
+					focusX: this.animationState.focusX,
+					focusY: this.animationState.focusY,
+					progress: this.animationState.progress,
+				},
+				shadow: {
+					enabled: this.config.showShadow,
+					intensity: this.config.shadowIntensity,
+				},
+				sceneTransform: {
+					scale: this.animationState.appliedScale,
+					x: this.animationState.x,
+					y: this.animationState.y,
+				},
+			};
+
+			this.compositeCtx.save();
+			applyCanvasSceneTransform(this.compositeCtx, {
+				scale: this.animationState.appliedScale,
+				x: this.animationState.x,
+				y: this.animationState.y,
+			});
+			executeExtensionRenderHooks("post-video", this.compositeCtx, hookParams);
+			executeExtensionRenderHooks("post-zoom", this.compositeCtx, hookParams);
+			executeExtensionRenderHooks("post-cursor", this.compositeCtx, hookParams);
+
+			// Cursor click effects
+			this.emitCursorInteractions(cursorTimeMs);
+			executeExtensionCursorEffects(
+				this.compositeCtx,
+				timeMs,
+				this.config.width,
+				this.config.height,
+				{
+					zoom: hookParams.zoom,
+					sceneTransform: hookParams.sceneTransform,
+					videoLayout: hookParams.videoLayout,
+				},
+			);
+			this.compositeCtx.restore();
+
+			executeExtensionRenderHooks("post-webcam", this.compositeCtx, hookParams);
+			executeExtensionRenderHooks("post-annotations", this.compositeCtx, hookParams);
+
+			executeExtensionRenderHooks("final", this.compositeCtx, hookParams);
+		}
+	}
+
+	/**
+	 * Get the cursor position (normalized 0-1) at the given time.
+	 */
+	private getCursorPosition(
+		timeMs: number,
+	): { cx: number; cy: number; interactionType?: string } | null {
+		const telemetry = this.config.cursorTelemetry;
+		if (!telemetry || telemetry.length === 0) return null;
+
+		// Find the closest telemetry point
+		let closest = telemetry[0];
+		let minDist = Math.abs(telemetry[0].timeMs - timeMs);
+		for (let i = 1; i < telemetry.length; i++) {
+			const dist = Math.abs(telemetry[i].timeMs - timeMs);
+			if (dist < minDist) {
+				minDist = dist;
+				closest = telemetry[i];
+			}
+			if (telemetry[i].timeMs > timeMs) break;
+		}
+
+		return mapCursorToCanvasNormalized(
+			{ cx: closest.cx, cy: closest.cy, interactionType: closest.interactionType },
+			{
+				maskRect: this.layoutCache?.maskRect,
+				canvasWidth: this.config.width,
+				canvasHeight: this.config.height,
+			},
+		);
+	}
+
+	/**
+	 * Emit cursor interaction events for extensions based on telemetry clicks.
+	 */
+	private lastEmittedClickTimeMs = -1;
+
+	private emitCursorInteractions(timeMs: number): void {
+		const telemetry = this.config.cursorTelemetry;
+		if (!telemetry || telemetry.length === 0) return;
+
+		// Find click events near this time
+		for (const point of telemetry) {
+			if (point.timeMs > timeMs) break;
+			if (point.timeMs < timeMs - 100) continue;
+			if (!point.interactionType || point.interactionType === "move") continue;
+			if (point.timeMs === this.lastEmittedClickTimeMs) continue;
+
+			const mappedCursor = mapCursorToCanvasNormalized(
+				{ cx: point.cx, cy: point.cy, interactionType: point.interactionType },
+				{
+					maskRect: this.layoutCache?.maskRect,
+					canvasWidth: this.config.width,
+					canvasHeight: this.config.height,
+				},
+			);
+			if (!mappedCursor) continue;
+
+			this.lastEmittedClickTimeMs = point.timeMs;
+			notifyCursorInteraction(
+				point.timeMs,
+				mappedCursor.cx,
+				mappedCursor.cy,
+				point.interactionType,
+			);
+		}
 	}
 
 	private updateLayout(): void {
@@ -1547,7 +1761,7 @@ export class FrameRenderer {
 			width,
 			height,
 			padding,
-			frameInsets: null,
+			frameInsets: this.frameInsets,
 			cropRegion,
 			videoWidth,
 			videoHeight,
@@ -1733,6 +1947,71 @@ export class FrameRenderer {
 		}
 
 		if (includeWebcam) this.drawWebcamOverlay(ctx, w, h);
+	}
+
+	private drawFrame(sceneTransform?: { scale: number; x: number; y: number }): void {
+		if ((!this.frameImage && !this.frameDraw) || !this.compositeCtx || !this.layoutCache)
+			return;
+
+		const ctx = this.compositeCtx;
+		const maskRect = this.layoutCache.maskRect;
+		const insets = this.frameInsets;
+		const transform = sceneTransform ?? { scale: 1, x: 0, y: 0 };
+		const drawWithTransform = (draw: () => void) => {
+			ctx.save();
+			applyCanvasSceneTransform(ctx, transform);
+			draw();
+			ctx.restore();
+		};
+
+		if (!insets) {
+			// No insets: draw frame spanning entire mask area
+			if (this.frameDraw) {
+				const c = document.createElement("canvas");
+				c.width = Math.round(maskRect.width);
+				c.height = Math.round(maskRect.height);
+				const dCtx = c.getContext("2d");
+				if (dCtx) this.frameDraw(dCtx, c.width, c.height);
+				drawWithTransform(() => {
+					ctx.drawImage(c, maskRect.x, maskRect.y, maskRect.width, maskRect.height);
+				});
+			} else {
+				drawWithTransform(() => {
+					ctx.drawImage(
+						this.frameImage!,
+						maskRect.x,
+						maskRect.y,
+						maskRect.width,
+						maskRect.height,
+					);
+				});
+			}
+			return;
+		}
+
+		// Calculate frame dimensions from insets
+		const screenW = maskRect.width;
+		const screenH = maskRect.height;
+		const frameW = screenW / (1 - insets.left - insets.right);
+		const frameH = screenH / (1 - insets.top - insets.bottom);
+		const frameX = maskRect.x - insets.left * frameW;
+		const frameY = maskRect.y - insets.top * frameH;
+
+		if (this.frameDraw) {
+			// Draw at the exact export resolution — no bitmap scaling
+			const c = document.createElement("canvas");
+			c.width = Math.round(frameW);
+			c.height = Math.round(frameH);
+			const dCtx = c.getContext("2d");
+			if (dCtx) this.frameDraw(dCtx, c.width, c.height);
+			drawWithTransform(() => {
+				ctx.drawImage(c, frameX, frameY, frameW, frameH);
+			});
+		} else {
+			drawWithTransform(() => {
+				ctx.drawImage(this.frameImage!, frameX, frameY, frameW, frameH);
+			});
+		}
 	}
 
 	private drawWebcamOverlay(ctx: CanvasRenderingContext2D, width: number, height: number): void {
@@ -2024,5 +2303,8 @@ export class FrameRenderer {
 		this.webcamBubbleCanvas = null;
 		this.webcamBubbleCtx = null;
 		this.lastSyncedWebcamTime = null;
+		this.frameImage = null;
+		this.frameInsets = null;
+		this.frameDraw = null;
 	}
 }

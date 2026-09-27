@@ -1,0 +1,11 @@
+{
+	"id": "dev.klyra.intro-title",
+	"name": "Intro Title",
+	"version": "1.0.0",
+	"description": "Opens your video with a title card (product name and tagline) that fades out after a few seconds.",
+	"author": "Klyra",
+	"license": "AGPL-3.0",
+	"icon": "TextT",
+	"main": "index.js",
+	"permissions": ["render", "ui"]
+}

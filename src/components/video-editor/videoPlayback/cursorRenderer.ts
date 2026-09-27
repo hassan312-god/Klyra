@@ -2,6 +2,7 @@ import { Assets, BlurFilter, Container, Graphics, Sprite, Texture } from "pixi.j
 import { MotionBlurFilter } from "pixi-filters/motion-blur";
 import minimalCursorUrl from "@/assets/cursors/custom/minimal-cursor.svg";
 import { getRenderableAssetUrl } from "@/lib/assetPath";
+import { extensionHost } from "@/lib/extensions";
 import {
 	type CursorClickEffectStyle,
 	type CursorStyle,
@@ -174,11 +175,24 @@ const SUPPORTED_CURSOR_KEYS: CursorAssetKey[] = [
 	"not-allowed",
 ];
 
+const DEFAULT_CURSOR_PACK_ANCHOR = { x: 0.08, y: 0.08 } as const;
 const CURSOR_PACK_POINTER_TYPES = new Set<CursorAssetKey>(["pointer", "open-hand", "closed-hand"]);
 const BUILTIN_CURSOR_PACK_SOURCES: Record<string, CursorPackSource> = {};
 
 function getCursorPackSources(): Record<string, CursorPackSource> {
-	return { ...BUILTIN_CURSOR_PACK_SOURCES };
+	const sources: Record<string, CursorPackSource> = { ...BUILTIN_CURSOR_PACK_SOURCES };
+
+	for (const cursorStyle of extensionHost.getContributedCursorStyles()) {
+		const hotspot = cursorStyle.cursorStyle.hotspot ?? DEFAULT_CURSOR_PACK_ANCHOR;
+		sources[cursorStyle.id] = {
+			defaultUrl: cursorStyle.resolvedDefaultUrl,
+			pointerUrl: cursorStyle.resolvedClickUrl ?? cursorStyle.resolvedDefaultUrl,
+			defaultAnchor: hotspot,
+			pointerAnchor: hotspot,
+		};
+	}
+
+	return sources;
 }
 
 function buildCursorPackSourcesSignature(sources: Record<string, CursorPackSource>): string {

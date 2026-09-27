@@ -1,0 +1,11 @@
+{
+	"id": "dev.klyra.spotlight",
+	"name": "Spotlight",
+	"version": "1.0.0",
+	"description": "Dims the screen except for a soft circle around the cursor, so viewers always know where to look.",
+	"author": "Klyra",
+	"license": "AGPL-3.0",
+	"icon": "Flashlight",
+	"main": "index.js",
+	"permissions": ["render", "cursor", "ui"]
+}

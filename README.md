@@ -170,7 +170,7 @@ Browse and install community extensions from the Klyra Marketplace (coming soon)
 
 Prebuilt releases are available at:
 
-https://github.com/hassan312-god/record/releases
+https://github.com/hassan312-god/Klyra/releases
 
 ---
 
@@ -203,7 +203,7 @@ sudo apt install build-essential cmake libx11-dev libxtst-dev libxrandr-dev libx
 ### Steps
 
 ```bash
-git clone https://github.com/hassan312-god/record.git klyra
+git clone https://github.com/hassan312-god/Klyra.git klyra
 cd klyra
 npm install
 npm run dev
@@ -360,7 +360,7 @@ See `CONTRIBUTING.md` for guidelines.
 
 Bug reports and feature requests:
 
-https://github.com/hassan312-god/record/issues
+https://github.com/hassan312-god/Klyra/issues
 
 Pull requests are welcome.
 

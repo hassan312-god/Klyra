@@ -129,6 +129,8 @@ export interface ProjectEditorState {
 	cursorSway: number;
 	borderRadius: number;
 	padding: Padding;
+	/** Selected frame ID (e.g. "klyra.frames/browser-dark"), or null for none */
+	frame: string | null;
 	cropRegion: CropRegion;
 	zoomRegions: ZoomRegion[];
 	trimRegions: TrimRegion[];
@@ -942,6 +944,7 @@ export function normalizeProjectEditor(editor: Partial<ProjectEditorState>): Pro
 			}
 			return { ...DEFAULT_PADDING };
 		})(),
+		frame: typeof editor.frame === "string" ? editor.frame : null,
 		cropRegion: {
 			x: cropX,
 			y: cropY,

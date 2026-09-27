@@ -9,9 +9,11 @@ import {
 } from "@phosphor-icons/react";
 import { motion } from "motion/react";
 import type { ComponentProps, Dispatch, SetStateAction } from "react";
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import type { useI18n } from "@/contexts/I18nContext";
+import { extensionHost } from "@/lib/extensions";
+import { ExtensionIcon } from "../ExtensionIcon";
 import ExtensionManager from "../ExtensionManager";
 import { SettingsPanel } from "../SettingsPanel";
 import type { EditorEffectSection } from "../types";
@@ -23,7 +25,43 @@ type Props = {
 	settingsPanelProps: ComponentProps<typeof SettingsPanel>;
 };
 
+type ExtensionSectionButton = {
+	id: EditorEffectSection;
+	label: string;
+	icon: typeof PuzzlePiece | string;
+	extensionPath?: string | null;
+};
+
+/** Settings panels contributed by extensions that have no parent section get their own rail button. */
+function useExtensionSectionButtons(): ExtensionSectionButton[] {
+	const [buttons, setButtons] = useState<ExtensionSectionButton[]>([]);
+	useEffect(() => {
+		const update = () => {
+			const extensionPathById = new Map(
+				extensionHost
+					.getActiveExtensions()
+					.map((extension) => [extension.manifest.id, extension.path]),
+			);
+			setButtons(
+				extensionHost
+					.getSettingsPanels()
+					.filter((registered) => !registered.panel.parentSection)
+					.map((registered) => ({
+						id: `ext:${registered.extensionId}/${registered.panel.id}` as EditorEffectSection,
+						label: registered.panel.label,
+						icon: registered.panel.icon || PuzzlePiece,
+						extensionPath: extensionPathById.get(registered.extensionId),
+					})),
+			);
+		};
+		update();
+		return extensionHost.onChange(update);
+	}, []);
+	return buttons;
+}
+
 export function EditorSidebar({ t, activeSection, setActiveSection, settingsPanelProps }: Props) {
+	const extensionSectionButtons = useExtensionSectionButtons();
 	const sections = useMemo(
 		() => [
 			{ id: "scene" as const, label: t("settings.sections.scene", "Scene"), icon: Sparkle },
@@ -44,8 +82,9 @@ export function EditorSidebar({ t, activeSection, setActiveSection, settingsPane
 				label: t("settings.sections.extensions", "Extensions"),
 				icon: PuzzlePiece,
 			},
+			...extensionSectionButtons,
 		],
-		[t],
+		[t, extensionSectionButtons],
 	);
 	return (
 		<div className="flex flex-shrink-0 gap-1.5">
@@ -76,10 +115,22 @@ export function EditorSidebar({ t, activeSection, setActiveSection, settingsPane
 									}}
 									transition={{ duration: 0.14 }}
 								>
-									<section.icon
-										className="h-[27px] w-[27px]"
-										weight={isActive ? "fill" : "regular"}
-									/>
+									{typeof section.icon === "string" ? (
+										<ExtensionIcon
+											icon={section.icon}
+											extensionPath={
+												"extensionPath" in section
+													? section.extensionPath
+													: null
+											}
+											className="h-[27px] w-[27px]"
+										/>
+									) : (
+										<section.icon
+											className="h-[27px] w-[27px]"
+											weight={isActive ? "fill" : "regular"}
+										/>
+									)}
 								</motion.span>
 							</motion.button>
 							<div className="ml-1.5 h-1.5 w-1.5 flex-shrink-0">

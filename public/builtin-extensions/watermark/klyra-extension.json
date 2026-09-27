@@ -1,0 +1,11 @@
+{
+	"id": "dev.klyra.watermark",
+	"name": "Watermark",
+	"version": "1.0.0",
+	"description": "Adds your brand name or handle in a corner of every exported frame.",
+	"author": "Klyra",
+	"license": "AGPL-3.0",
+	"icon": "SealCheck",
+	"main": "index.js",
+	"permissions": ["render", "ui"]
+}

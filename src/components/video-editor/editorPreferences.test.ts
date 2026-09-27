@@ -295,6 +295,7 @@ describe("editorPreferences", () => {
 			cursorSway: 1.5,
 			borderRadius: 18,
 			padding: { top: 30, right: 30, bottom: 30, left: 30, linked: true },
+			frame: DEFAULT_EDITOR_PREFERENCES.frame,
 			aspectRatio: "4:5",
 			exportEncodingMode: "quality",
 			exportBackendPreference: DEFAULT_EDITOR_PREFERENCES.exportBackendPreference,

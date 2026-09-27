@@ -1,4 +1,4 @@
-// Friendly reminder: Klyra is licensed under AGPL-3.0, author @hassan312-god, repo-> https://github.com/hassan312-god/record
+// Friendly reminder: Klyra is licensed under AGPL-3.0, author @hassan312-god, repo-> https://github.com/hassan312-god/Klyra
 // Please use this code with the right attribution.
 
 export interface SpringState {

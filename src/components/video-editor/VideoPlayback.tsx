@@ -12,6 +12,18 @@ import {
 	useState,
 } from "react";
 import { getAssetPath, getRenderableAssetUrl, getRenderableVideoUrl } from "@/lib/assetPath";
+import { extensionHost } from "@/lib/extensions";
+import {
+	mapCursorToCanvasNormalized,
+	mapSmoothedCursorToCanvasNormalized,
+} from "@/lib/extensions/cursorCoordinates";
+import {
+	clearCursorEffects,
+	executeExtensionCursorEffects,
+	executeExtensionRenderHooks,
+	notifyCursorInteraction,
+} from "@/lib/extensions/renderHooks";
+import { applyCanvasSceneTransform } from "@/lib/extensions/sceneTransform";
 import { getWebcamShadowFilter } from "@/lib/exporter/shadowProfile";
 import { getSquircleSvgPath } from "@/lib/geometry/squircle";
 import {
@@ -142,6 +154,55 @@ import {
 	scaleWebcamOverlayPixels,
 } from "./webcamOverlay";
 
+function getContributedCursorStylesSignature() {
+	return extensionHost
+		.getContributedCursorStyles()
+		.map(
+			(cursorStyle) =>
+				`${cursorStyle.id}:${cursorStyle.resolvedDefaultUrl}:${cursorStyle.resolvedClickUrl ?? ""}:${cursorStyle.cursorStyle.hotspot?.x ?? ""}:${cursorStyle.cursorStyle.hotspot?.y ?? ""}`,
+		)
+		.sort()
+		.join("|");
+}
+
+function getRegisteredFramesSignature() {
+	return extensionHost
+		.getFrames()
+		.map(
+			(frame) =>
+				`${frame.id}:${frame.filePath}:${frame.thumbnailPath}:${frame.appearance ?? ""}`,
+		)
+		.sort()
+		.join("|");
+}
+
+function serializeExtensionSettingValue(value: unknown): string {
+	try {
+		const serialized = JSON.stringify(value);
+		return serialized ?? "undefined";
+	} catch {
+		try {
+			return String(value);
+		} catch {
+			return "[unserializable]";
+		}
+	}
+}
+
+function getExtensionSettingsSignature() {
+	return extensionHost
+		.getSettingsPanels()
+		.flatMap((registeredPanel) => {
+			const { extensionId, panel } = registeredPanel;
+			return panel.fields.map((field) => {
+				const value = extensionHost.getExtensionSetting(extensionId, field.id);
+				return `${extensionId}:${panel.id}:${field.id}:${serializeExtensionSettingValue(value)}`;
+			});
+		})
+		.sort()
+		.join("|");
+}
+
 type PlaybackAnimationState = {
 	scale: number;
 	appliedScale: number;
@@ -198,6 +259,44 @@ function summarizeRendererAttempts(attempts: readonly PixiRendererAttempt[]): st
 	return `No supported Pixi preview renderer was available. Attempted: ${details}`;
 }
 
+function getCursorPositionAtTime(
+	telemetry: CursorTelemetryPoint[],
+	timeMs: number,
+	params?: {
+		maskRect?: { x: number; y: number; width: number; height: number } | null;
+		canvasWidth: number;
+		canvasHeight: number;
+	},
+): { cx: number; cy: number; interactionType?: string } | null {
+	if (telemetry.length === 0) {
+		return null;
+	}
+
+	let closest = telemetry[0];
+	let minDist = Math.abs(telemetry[0].timeMs - timeMs);
+
+	for (let index = 1; index < telemetry.length; index++) {
+		const point = telemetry[index];
+		const distance = Math.abs(point.timeMs - timeMs);
+		if (distance < minDist) {
+			minDist = distance;
+			closest = point;
+		}
+		if (point.timeMs > timeMs) {
+			break;
+		}
+	}
+
+	return mapCursorToCanvasNormalized(
+		{
+			cx: closest.cx,
+			cy: closest.cy,
+			interactionType: closest.interactionType,
+		},
+		params ?? { canvasWidth: 1, canvasHeight: 1 },
+	);
+}
+
 function getEffectiveNativeAspectRatio(
 	dimensions: { width: number; height: number } | null | undefined,
 	cropRegion?: import("./types").CropRegion,
@@ -247,6 +346,7 @@ interface VideoPlaybackProps {
 	connectedZoomEasing?: ZoomTransitionEasing;
 	borderRadius?: number;
 	padding?: Padding | number;
+	frame?: string | null;
 	cropRegion?: import("./types").CropRegion;
 	webcam?: WebcamOverlaySettings;
 	webcamVideoPath?: string | null;
@@ -332,6 +432,7 @@ const VideoPlayback = forwardRef<VideoPlaybackRef, VideoPlaybackProps>(
 			connectedZoomEasing = DEFAULT_CONNECTED_ZOOM_EASING,
 			borderRadius = 0,
 			padding = DEFAULT_PADDING,
+			frame = null,
 			cropRegion,
 			webcam,
 			webcamVideoPath,
@@ -393,6 +494,7 @@ const VideoPlayback = forwardRef<VideoPlaybackRef, VideoPlaybackProps>(
 		const cameraContainerRef = useRef<Container | null>(null);
 		const [pixiReady, setPixiReady] = useState(false);
 		const videoReady = usePreviewVideoReady(videoRef, videoPath);
+		const [frameUpdateCounter, setFrameUpdateCounter] = useState(0);
 
 		const [previewViewportWidth, setPreviewViewportWidth] = useState(640);
 		const [annotationSceneTransform, setAnnotationSceneTransform] =
@@ -408,6 +510,24 @@ const VideoPlayback = forwardRef<VideoPlaybackRef, VideoPlaybackProps>(
 				width: 0,
 				height: 0,
 			});
+
+		useEffect(() => {
+			let framesSignature = getRegisteredFramesSignature();
+			let settingsSignature = getExtensionSettingsSignature();
+			return extensionHost.onChange(() => {
+				const nextFramesSignature = getRegisteredFramesSignature();
+				const nextSettingsSignature = getExtensionSettingsSignature();
+				if (
+					nextFramesSignature === framesSignature &&
+					nextSettingsSignature === settingsSignature
+				) {
+					return;
+				}
+				framesSignature = nextFramesSignature;
+				settingsSignature = nextSettingsSignature;
+				setFrameUpdateCounter((c) => c + 1);
+			});
+		}, []);
 
 		const overlayRef = useRef<HTMLDivElement | null>(null);
 		const focusIndicatorRef = useRef<HTMLDivElement | null>(null);
@@ -467,6 +587,10 @@ const VideoPlayback = forwardRef<VideoPlaybackRef, VideoPlaybackProps>(
 		}>({ x: 0, y: 0, width: 0, height: 0 });
 		const cropBoundsRef = useRef({ startX: 0, endX: 0, startY: 0, endY: 0 });
 		const maskGraphicsRef = useRef<Graphics | null>(null);
+		const frameSpriteRef = useRef<Sprite | null>(null);
+		const frameContainerRef = useRef<Container | null>(null);
+		const frameIdRef = useRef<string | null>(frame);
+		const frameReloadKeyRef = useRef<string | null>(null);
 		const isPlayingRef = useRef(isPlaying);
 		const suspendRenderingRef = useRef(suspendRendering);
 		const isSeekingRef = useRef(false);
@@ -489,6 +613,7 @@ const VideoPlayback = forwardRef<VideoPlaybackRef, VideoPlaybackProps>(
 		const zoomOutEasingRef = useRef(zoomOutEasing);
 		const connectedZoomEasingRef = useRef(connectedZoomEasing);
 		const cursorOverlayRef = useRef<PixiCursorOverlay | null>(null);
+		const cursorEffectsCanvasRef = useRef<HTMLCanvasElement | null>(null);
 		const cursorTelemetryRef = useRef<CursorTelemetryPoint[]>([]);
 		const showCursorRef = useRef(showCursor);
 		const cursorSizeRef = useRef(cursorSize);
@@ -511,6 +636,7 @@ const VideoPlayback = forwardRef<VideoPlaybackRef, VideoPlaybackProps>(
 		const cursorSwayRef = useRef(cursorSway);
 		const zoomMotionBlurRef = useRef(zoomMotionBlur);
 		const zoomMotionBlurTuningRef = useRef(zoomMotionBlurTuning);
+		const lastEmittedClickTimeMsRef = useRef(-1);
 
 		// Spring animation state for smooth zoom transitions
 		const springScaleRef = useRef<SpringState>(createSpringState(1));
@@ -530,9 +656,7 @@ const VideoPlayback = forwardRef<VideoPlaybackRef, VideoPlaybackProps>(
 		}, []);
 
 		const initializePixiRenderer = useCallback(
-			async (
-				container: HTMLDivElement,
-			): Promise<Application> => {
+			async (container: HTMLDivElement): Promise<Application> => {
 				const backendOrder: PixiPreviewBackend[] = ["webgl", "webgpu"];
 				const attempts: PixiRendererAttempt[] = [];
 
@@ -995,6 +1119,17 @@ const VideoPlayback = forwardRef<VideoPlaybackRef, VideoPlaybackProps>(
 				};
 			}
 
+			// Look up device frame insets so layout centers the full frame (video + bezels)
+			let frameInsets: { top: number; right: number; bottom: number; left: number } | null =
+				null;
+			if (frame) {
+				const frames = extensionHost.getFrames();
+				const frameData = frames.find((f) => f.id === frame);
+				if (frameData?.screenInsets) {
+					frameInsets = frameData.screenInsets;
+				}
+			}
+
 			const result = layoutVideoContentUtil({
 				container,
 				app,
@@ -1005,7 +1140,7 @@ const VideoPlayback = forwardRef<VideoPlaybackRef, VideoPlaybackProps>(
 				lockedVideoDimensions: lockedVideoDimensionsRef.current,
 				borderRadius,
 				padding,
-				frameInsets: null,
+				frameInsets,
 			});
 
 			if (result) {
@@ -1044,6 +1179,62 @@ const VideoPlayback = forwardRef<VideoPlaybackRef, VideoPlaybackProps>(
 				});
 				cropBoundsRef.current = result.cropBounds;
 
+				// Sync extension cursor effects canvas resolution with renderer
+				const effectsCanvas = cursorEffectsCanvasRef.current;
+				if (effectsCanvas) {
+					const w = result.stageSize.width;
+					const h = result.stageSize.height;
+					if (effectsCanvas.width !== w || effectsCanvas.height !== h) {
+						effectsCanvas.width = w;
+						effectsCanvas.height = h;
+					}
+				}
+
+				// Push layout info to extension host for query APIs
+				extensionHost.setVideoLayout({
+					maskRect: {
+						x: result.maskRect.x,
+						y: result.maskRect.y,
+						width: result.maskRect.width,
+						height: result.maskRect.height,
+					},
+					canvasWidth: result.stageSize.width,
+					canvasHeight: result.stageSize.height,
+					borderRadius,
+					padding,
+				});
+				extensionHost.setShadowConfig({
+					enabled: Boolean(showShadow) && shadowIntensity > 0,
+					intensity: shadowIntensity,
+				});
+
+				// Position device frame sprite to fill the stage
+				const frameSprite = frameSpriteRef.current;
+				if (frameSprite && frame) {
+					const frames = extensionHost.getFrames();
+					const frameData = frames.find((f) => f.id === frame);
+					if (frameData) {
+						const maskRect = result.maskRect;
+						const insets = frameData.screenInsets;
+						if (insets) {
+							// Frame is larger than screen area - compute full frame size from insets
+							const screenW = maskRect.width;
+							const screenH = maskRect.height;
+							const frameW = screenW / (1 - insets.left - insets.right);
+							const frameH = screenH / (1 - insets.top - insets.bottom);
+							const frameX = maskRect.x - insets.left * frameW;
+							const frameY = maskRect.y - insets.top * frameH;
+							frameSprite.position.set(frameX, frameY);
+							frameSprite.width = frameW;
+							frameSprite.height = frameH;
+						} else {
+							frameSprite.position.set(maskRect.x, maskRect.y);
+							frameSprite.width = maskRect.width;
+							frameSprite.height = maskRect.height;
+						}
+					}
+				}
+
 				// Layout updates the media geometry, not the composed camera pose.
 				// In particular, a ResizeObserver notification while paused must not
 				// replace the exported spring position with an unzoomed frame.
@@ -1061,6 +1252,9 @@ const VideoPlayback = forwardRef<VideoPlaybackRef, VideoPlaybackProps>(
 			cropRegion,
 			borderRadius,
 			padding,
+			frame,
+			showShadow,
+			shadowIntensity,
 			applyWebcamBubbleLayout,
 			syncPreviewMotionBlurQuality,
 		]);
@@ -1078,6 +1272,104 @@ const VideoPlayback = forwardRef<VideoPlaybackRef, VideoPlaybackProps>(
 		useEffect(() => {
 			layoutVideoContentRef.current = layoutVideoContent;
 		}, [layoutVideoContent]);
+
+		// Sync device frame ref
+		useEffect(() => {
+			frameIdRef.current = frame;
+			extensionHost.setActiveFrame(frame ?? null);
+		}, [frame]);
+
+		// Manage device frame sprite
+		useEffect(() => {
+			const frameContainer = frameContainerRef.current;
+			if (!frameContainer) return;
+			const nextFrameReloadKey = `${frame ?? ""}:${frameUpdateCounter}`;
+			const activeFrameData = frame
+				? extensionHost.getFrames().find((registeredFrame) => registeredFrame.id === frame)
+				: null;
+			const shouldRedrawDynamicFrame = Boolean(
+				activeFrameData?.draw && frameSpriteRef.current,
+			);
+
+			// Layout-only changes should not force texture/sprite recreation.
+			if (frameReloadKeyRef.current === nextFrameReloadKey && !shouldRedrawDynamicFrame) {
+				layoutVideoContentRef.current?.();
+				return;
+			}
+			frameReloadKeyRef.current = nextFrameReloadKey;
+
+			// Clear existing frame sprite and its texture to free memory
+			if (frameSpriteRef.current) {
+				const sprite = frameSpriteRef.current;
+				frameContainer.removeChild(sprite);
+				if (sprite.texture) {
+					sprite.texture.destroy(true); // destroy texture and its baseTexture
+				}
+				sprite.destroy();
+				frameSpriteRef.current = null;
+			}
+
+			if (!frame) {
+				layoutVideoContentRef.current?.();
+				return;
+			}
+
+			let cancelled = false;
+
+			function tryLoadFrame() {
+				if (cancelled) return;
+				const container = frameContainerRef.current;
+				if (!container) return false;
+				const frames = extensionHost.getFrames();
+				const frameData = frames.find((f) => f.id === frame);
+				if (!frameData) return false;
+
+				if (frameData.draw) {
+					// Resolution-independent: draw at a reasonable size, Pixi handles the rest
+					const drawW = 1920;
+					const drawH = 1080;
+					const canvas = document.createElement("canvas");
+					canvas.width = drawW;
+					canvas.height = drawH;
+					const ctx = canvas.getContext("2d");
+					if (ctx) frameData.draw(ctx, drawW, drawH);
+					if (cancelled || frameIdRef.current !== frame) return true;
+					const texture = Texture.from(canvas);
+					const sprite = new Sprite(texture);
+					frameSpriteRef.current = sprite;
+					container.addChild(sprite);
+					layoutVideoContentRef.current?.();
+				} else {
+					const img = new Image();
+					img.onload = () => {
+						if (cancelled || frameIdRef.current !== frame) return;
+						const texture = Texture.from(img);
+						const sprite = new Sprite(texture);
+						frameSpriteRef.current = sprite;
+						container.addChild(sprite);
+						layoutVideoContentRef.current?.();
+					};
+					img.src = frameData.filePath;
+				}
+				return true;
+			}
+
+			// Try immediately; if extension hasn't registered frames yet,
+			// listen for changes and retry once they become available.
+			if (!tryLoadFrame()) {
+				const unsub = extensionHost.onChange(() => {
+					if (tryLoadFrame()) unsub();
+				});
+				return () => {
+					cancelled = true;
+					unsub();
+				};
+			}
+
+			return () => {
+				cancelled = true;
+			};
+		}, [frame, frameUpdateCounter]);
 
 		// Always re-run geometric layout when layout props change, even if frame sprite isn't reloaded.
 		useEffect(() => {
@@ -1244,6 +1536,10 @@ const VideoPlayback = forwardRef<VideoPlaybackRef, VideoPlaybackProps>(
 
 		useEffect(() => {
 			isPlayingRef.current = isPlaying;
+			extensionHost.emitEvent({
+				type: isPlaying ? "playback:play" : "playback:pause",
+				timeMs: currentTimeRef.current,
+			});
 			const bgVideo = bgVideoRef.current;
 			if (bgVideo) {
 				if (isPlaying) {
@@ -1416,6 +1712,16 @@ const VideoPlayback = forwardRef<VideoPlaybackRef, VideoPlaybackProps>(
 
 		useEffect(() => {
 			cursorTelemetryRef.current = cursorTelemetry;
+			// Push to extension host for query APIs
+			extensionHost.setCursorTelemetry(
+				cursorTelemetry.map((p) => ({
+					timeMs: p.timeMs,
+					cx: p.cx,
+					cy: p.cy,
+					interactionType: p.interactionType,
+					pressure: p.pressure,
+				})),
+			);
 			requestPausedFrameRefresh();
 		}, [cursorTelemetry, requestPausedFrameRefresh]);
 
@@ -1530,7 +1836,13 @@ const VideoPlayback = forwardRef<VideoPlaybackRef, VideoPlaybackProps>(
 		useEffect(() => {
 			const timeMs = currentTime * 1000;
 			currentTimeRef.current = timeMs;
-		}, [currentTime]);
+			const videoInfo = extensionHost.getVideoInfoSnapshot();
+			extensionHost.setPlaybackState({
+				currentTimeMs: timeMs,
+				durationMs: videoInfo?.durationMs ?? 0,
+				isPlaying,
+			});
+		}, [currentTime, isPlaying]);
 
 		useEffect(() => {
 			if (!pixiReady || !videoReady) return;
@@ -1766,6 +2078,11 @@ const VideoPlayback = forwardRef<VideoPlaybackRef, VideoPlaybackProps>(
 				videoContainerRef.current = videoContainer;
 				videoEffectsContainer.addChild(videoContainer);
 
+				// Device frame overlay container - sits above video but below cursor
+				const frameContainer = new Container();
+				frameContainerRef.current = frameContainer;
+				cameraContainer.addChild(frameContainer);
+
 				const cursorContainer = new Container();
 				cursorContainerRef.current = cursorContainer;
 				cameraContainer.addChild(cursorContainer);
@@ -1828,6 +2145,8 @@ const VideoPlayback = forwardRef<VideoPlaybackRef, VideoPlaybackProps>(
 				cameraContainerRef.current = null;
 				videoEffectsContainerRef.current = null;
 				videoContainerRef.current = null;
+				frameContainerRef.current = null;
+				frameSpriteRef.current = null;
 				cursorContainerRef.current = null;
 				videoSpriteRef.current = null;
 			};
@@ -1896,6 +2215,11 @@ const VideoPlayback = forwardRef<VideoPlaybackRef, VideoPlaybackProps>(
 					timelineTimeRef.current = time;
 					if (source !== null) currentTimeRef.current = source * 1000;
 					onTimeUpdate(time);
+					// Extensions work in source-video time, like render hooks during export.
+					extensionHost.emitEvent({
+						type: "playback:timeupdate",
+						timeMs: currentTimeRef.current,
+					});
 				},
 				onPlaying: (playing) => {
 					isPlayingRef.current = playing;
@@ -2046,6 +2370,14 @@ const VideoPlayback = forwardRef<VideoPlaybackRef, VideoPlaybackProps>(
 				state.focusY = target.focus.cy;
 				state.progress = target.progress;
 
+				// Push zoom state to extension host for query APIs
+				extensionHost.setZoomState({
+					scale: target.scale,
+					focusX: target.focus.cx,
+					focusY: target.focus.cy,
+					progress: target.progress,
+				});
+
 				const projectedTransform = computeZoomTransform({
 					stageSize: stageSizeRef.current,
 					baseMask: baseMaskRef.current,
@@ -2107,15 +2439,187 @@ const VideoPlayback = forwardRef<VideoPlaybackRef, VideoPlaybackProps>(
 				applyWebcamBubbleLayout(animationStateRef.current.appliedScale || 1);
 
 				const timeMs = currentTimeRef.current;
+				const effectsCanvas = cursorEffectsCanvasRef.current;
+				const extensionCanvasWidth = effectsCanvas?.width || stageSizeRef.current.width;
+				const extensionCanvasHeight = effectsCanvas?.height || stageSizeRef.current.height;
+				let smoothedCursorForHooks: {
+					cx: number;
+					cy: number;
+					trail: Array<{ cx: number; cy: number }>;
+				} | null = null;
+
+				// Update cursor overlay + emit cursor events
 				const cursorOverlay = cursorOverlayRef.current;
 				if (cursorOverlay) {
+					const telemetry = cursorTelemetryRef.current;
 					cursorOverlay.update(
-						cursorTelemetryRef.current,
+						telemetry,
 						timeMs,
 						baseMaskRef.current,
 						showCursorRef.current,
 						isSeekingRef.current || shouldSnapPausedFrameRef.current,
 					);
+
+					smoothedCursorForHooks = mapSmoothedCursorToCanvasNormalized(
+						cursorOverlay.getSmoothedCursorSnapshot(),
+						{
+							maskRect: baseMaskRef.current,
+							canvasWidth: extensionCanvasWidth,
+							canvasHeight: extensionCanvasHeight,
+						},
+					);
+					extensionHost.setSmoothedCursor(
+						smoothedCursorForHooks
+							? {
+									timeMs,
+									cx: smoothedCursorForHooks.cx,
+									cy: smoothedCursorForHooks.cy,
+									trail: smoothedCursorForHooks.trail,
+								}
+							: null,
+					);
+
+					// Emit cursor:click events for extensions
+					if (isPlayingRef.current && telemetry.length > 0) {
+						for (let i = telemetry.length - 1; i >= 0; i--) {
+							const p = telemetry[i];
+							if (p.timeMs > timeMs) continue;
+							if (p.timeMs < timeMs - 100) break;
+							if (
+								p.interactionType &&
+								p.interactionType !== "move" &&
+								p.timeMs !== lastEmittedClickTimeMsRef.current
+							) {
+								const extensionCursor = mapCursorToCanvasNormalized(
+									{
+										cx: p.cx,
+										cy: p.cy,
+										interactionType: p.interactionType,
+									},
+									{
+										maskRect: baseMaskRef.current,
+										canvasWidth: extensionCanvasWidth,
+										canvasHeight: extensionCanvasHeight,
+									},
+								);
+								lastEmittedClickTimeMsRef.current = p.timeMs;
+								extensionHost.emitEvent({
+									type: "cursor:click",
+									timeMs: p.timeMs,
+									data: extensionCursor,
+								});
+								if (extensionCursor) {
+									notifyCursorInteraction(
+										p.timeMs,
+										extensionCursor.cx,
+										extensionCursor.cy,
+										p.interactionType,
+									);
+								}
+							}
+							break;
+						}
+					}
+				}
+
+				if (!cursorOverlay) {
+					extensionHost.setSmoothedCursor(null);
+				}
+
+				if (effectsCanvas && effectsCanvas.width > 0 && effectsCanvas.height > 0) {
+					const ctx2d = effectsCanvas.getContext("2d");
+					if (ctx2d) {
+						ctx2d.clearRect(0, 0, effectsCanvas.width, effectsCanvas.height);
+
+						const maskRect = baseMaskRef.current;
+						const animationState = animationStateRef.current;
+						const videoInfo = extensionHost.getVideoInfoSnapshot();
+						const rawCursor = getCursorPositionAtTime(
+							cursorTelemetryRef.current,
+							timeMs,
+							{
+								maskRect,
+								canvasWidth: effectsCanvas.width,
+								canvasHeight: effectsCanvas.height,
+							},
+						);
+						const hookParams = {
+							width: effectsCanvas.width,
+							height: effectsCanvas.height,
+							// Timeline time, like export (which renders timeline effects): time-based
+							// effects such as beat-synced visuals must line up with the music track.
+							timeMs: timelineTimeRef.current * 1000,
+							durationMs: videoInfo?.durationMs ?? 0,
+							cursor: smoothedCursorForHooks
+								? {
+										cx: smoothedCursorForHooks.cx,
+										cy: smoothedCursorForHooks.cy,
+										interactionType: rawCursor?.interactionType,
+									}
+								: rawCursor,
+							smoothedCursor: smoothedCursorForHooks,
+							videoLayout:
+								maskRect.width > 0 && maskRect.height > 0
+									? {
+											maskRect: {
+												x: maskRect.x,
+												y: maskRect.y,
+												width: maskRect.width,
+												height: maskRect.height,
+											},
+											borderRadius,
+											padding,
+										}
+									: undefined,
+							zoom: {
+								scale: animationState.scale,
+								focusX: animationState.focusX,
+								focusY: animationState.focusY,
+								progress: animationState.progress,
+							},
+							shadow: {
+								enabled: Boolean(showShadow) && shadowIntensity > 0,
+								intensity: shadowIntensity,
+							},
+							sceneTransform: {
+								scale: animationState.appliedScale,
+								x: animationState.x,
+								y: animationState.y,
+							},
+						};
+
+						ctx2d.save();
+						applyCanvasSceneTransform(ctx2d, {
+							scale: animationState.appliedScale,
+							x: animationState.x,
+							y: animationState.y,
+						});
+						executeExtensionRenderHooks("post-video", ctx2d, hookParams);
+						executeExtensionRenderHooks("post-zoom", ctx2d, hookParams);
+						executeExtensionRenderHooks("post-cursor", ctx2d, hookParams);
+
+						if (isSeekingRef.current) {
+							clearCursorEffects();
+						} else {
+							executeExtensionCursorEffects(
+								ctx2d,
+								timeMs,
+								effectsCanvas.width,
+								effectsCanvas.height,
+								{
+									zoom: hookParams.zoom,
+									sceneTransform: hookParams.sceneTransform,
+									videoLayout: hookParams.videoLayout,
+								},
+							);
+						}
+						ctx2d.restore();
+
+						executeExtensionRenderHooks("post-webcam", ctx2d, hookParams);
+						executeExtensionRenderHooks("post-annotations", ctx2d, hookParams);
+
+						executeExtensionRenderHooks("final", ctx2d, hookParams);
+					}
 				}
 
 				// Seeking events request one exact composition. Further Pixi ticks at the
@@ -2131,7 +2635,15 @@ const VideoPlayback = forwardRef<VideoPlaybackRef, VideoPlaybackProps>(
 					app.ticker.remove(ticker);
 				}
 			};
-		}, [pixiReady, videoReady, applyWebcamBubbleLayout]);
+		}, [
+			pixiReady,
+			videoReady,
+			applyWebcamBubbleLayout,
+			borderRadius,
+			padding,
+			showShadow,
+			shadowIntensity,
+		]);
 
 		useEffect(() => {
 			const overlay = cursorOverlayRef.current;
@@ -2195,10 +2707,58 @@ const VideoPlayback = forwardRef<VideoPlaybackRef, VideoPlaybackProps>(
 			cursorSway,
 		]);
 
+		useEffect(() => {
+			let cancelled = false;
+			let signature = getContributedCursorStylesSignature();
+
+			const refreshSelectedCursorStyle = async () => {
+				const overlay = cursorOverlayRef.current;
+				if (!overlay) {
+					return;
+				}
+
+				try {
+					await preloadCursorAssets();
+				} catch (error) {
+					console.warn("Failed to refresh contributed cursor styles in preview:", error);
+					return;
+				}
+
+				if (cancelled || cursorOverlayRef.current !== overlay) {
+					return;
+				}
+
+				overlay.setStyle(cursorStyleRef.current);
+				overlay.reset();
+			};
+
+			const unsubscribe = extensionHost.onChange(() => {
+				const nextSignature = getContributedCursorStylesSignature();
+				if (nextSignature === signature) {
+					return;
+				}
+
+				signature = nextSignature;
+				void refreshSelectedCursorStyle();
+			});
+
+			return () => {
+				cancelled = true;
+				unsubscribe();
+			};
+		}, []);
+
 		const handleLoadedMetadata = (e: React.SyntheticEvent<HTMLVideoElement, Event>) => {
 			const video = e.currentTarget;
 			onDurationChange(video.duration);
 
+			// Push video info to extension host for query APIs
+			extensionHost.setVideoInfo({
+				width: video.videoWidth,
+				height: video.videoHeight,
+				durationMs: Number.isFinite(video.duration) ? video.duration * 1000 : 0,
+				fps: 60, // Not available from HTMLVideoElement; default to 60
+			});
 			const targetTime = clampMediaTimeToDuration(
 				currentTime,
 				Number.isFinite(video.duration) ? video.duration : null,
@@ -2383,6 +2943,12 @@ const VideoPlayback = forwardRef<VideoPlaybackRef, VideoPlaybackProps>(
 						filter: sceneEffects.shadowFilter,
 						visibility: isGap ? "hidden" : "visible",
 					}}
+				/>
+				{/* Canvas overlay for extension cursor effects (drawn via Canvas 2D API) */}
+				<canvas
+					ref={cursorEffectsCanvasRef}
+					className="absolute inset-0 w-full h-full pointer-events-none"
+					style={{ zIndex: 1 }}
 				/>
 				{/* Only render overlay after PIXI and video are fully initialized */}
 				{pixiReady && videoReady && (

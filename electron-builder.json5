@@ -45,6 +45,10 @@
     {
       "from": "public/music",
       "to": "assets/music"
+    },
+    {
+      "from": "public/builtin-extensions",
+      "to": "builtin-extensions"
     }
   ],
   "publish": [

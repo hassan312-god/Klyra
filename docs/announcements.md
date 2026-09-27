@@ -39,7 +39,7 @@ Edit [`announcements.json`](../announcements.json) on the `main` branch to publi
 			},
 			"action": {
 				"label": "See what changed",
-				"url": "https://github.com/hassan312-god/record/releases"
+				"url": "https://github.com/hassan312-god/Klyra/releases"
 			}
 		},
 		{

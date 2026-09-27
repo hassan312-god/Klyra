@@ -39,6 +39,7 @@ export function useVideoEditorPresets({
 	const currentSnapshot = useMemo<EditorPresetSnapshot>(
 		() => ({
 			wallpaper: appearance.wallpaper,
+			frame: appearance.frame,
 			shadowIntensity: appearance.shadowIntensity,
 			backgroundBlur: appearance.backgroundBlur,
 			zoomMotionBlur: appearance.zoomMotionBlur,
@@ -104,6 +105,7 @@ export function useVideoEditorPresets({
 	const applySnapshot = useCallback(
 		(snapshot: EditorPresetSnapshot) => {
 			appearance.setWallpaper(snapshot.wallpaper);
+			appearance.setFrame(snapshot.frame);
 			appearance.setShadowIntensity(snapshot.shadowIntensity);
 			appearance.setBackgroundBlur(snapshot.backgroundBlur);
 			appearance.setZoomMotionBlur(snapshot.zoomMotionBlur);

@@ -21,7 +21,14 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { useTheme } from "@/contexts/ThemeContext";
-import { getAssetPath, getRenderableVideoUrl, getWallpaperThumbnailUrl } from "@/lib/assetPath";
+import {
+	getAssetPath,
+	getRenderableAssetUrl,
+	getRenderableVideoUrl,
+	getWallpaperThumbnailUrl,
+} from "@/lib/assetPath";
+import type { ExtensionSettingField } from "@/lib/extensions";
+import { extensionHost, type FrameInstance } from "@/lib/extensions";
 import { cn } from "@/lib/utils";
 import type { BuiltInWallpaper } from "@/lib/wallpapers";
 import {
@@ -107,6 +114,15 @@ import {
 const tahoeCursorUrl = cursorSetAssets.tahoe.arrow.url;
 const BUILTIN_CURSOR_PREVIEW_SIZE = 28;
 const BUILTIN_CURSOR_PREVIEW_FRAME_SIZE = 48;
+
+function getStepPrecision(step: number): number {
+	if (!Number.isFinite(step) || step <= 0) return 0;
+	const [mantissa = "0", exponentPart = "0"] = step.toExponential().split("e");
+	const exponent = Number.parseInt(exponentPart, 10);
+	const mantissaDecimals = (mantissa.split(".")[1] ?? "").replace(/0+$/, "").length;
+	const precision = exponent < 0 ? Math.max(0, -exponent + mantissaDecimals) : mantissaDecimals;
+	return Math.min(12, precision);
+}
 
 const GRADIENTS = [
 	"linear-gradient( 111.6deg,  rgba(114,167,232,1) 9.4%, rgba(253,129,82,1) 43.9%, rgba(253,129,82,1) 54.8%, rgba(249,202,86,1) 86.3% )",
@@ -234,6 +250,172 @@ function WallpaperVideoPreview({ src }: { src: string }) {
 				e.currentTarget.currentTime = 0;
 			}}
 		/>
+	);
+}
+
+/**
+ * Renders extension-contributed settings fields (toggle, slider, select, color, text).
+ */
+function ExtensionSettingsSection({
+	extensionId,
+	label,
+	fields,
+}: {
+	extensionId: string;
+	label: string;
+	fields: ExtensionSettingField[];
+}) {
+	const [, forceUpdate] = useState(0);
+
+	return (
+		<div className="flex flex-col gap-1.5 mt-2 pt-2 border-t border-foreground/[0.06]">
+			<p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/70">
+				{label}
+			</p>
+			{fields.map((field) => {
+				const value =
+					extensionHost.getExtensionSetting(extensionId, field.id) ?? field.defaultValue;
+
+				if (field.type === "toggle") {
+					return (
+						<div
+							key={field.id}
+							className="flex items-center justify-between rounded-lg bg-foreground/[0.03] px-2.5 py-1.5"
+						>
+							<span className="text-[11px] text-muted-foreground">{field.label}</span>
+							<Switch
+								checked={Boolean(value)}
+								onCheckedChange={(checked) => {
+									extensionHost.setExtensionSetting(
+										extensionId,
+										field.id,
+										checked,
+									);
+									forceUpdate((n) => n + 1);
+								}}
+								className="data-[state=checked]:bg-[#2563EB] scale-75"
+							/>
+						</div>
+					);
+				}
+
+				if (field.type === "slider") {
+					const step = field.step ?? 0.01;
+					const precision = getStepPrecision(step);
+					return (
+						<div key={field.id} className="mt-1">
+							<SliderControl
+								label={field.label}
+								value={
+									typeof value === "number"
+										? value
+										: (field.defaultValue as number)
+								}
+								defaultValue={field.defaultValue as number}
+								min={field.min ?? 0}
+								max={field.max ?? 1}
+								step={step}
+								onChange={(v) => {
+									extensionHost.setExtensionSetting(extensionId, field.id, v);
+									forceUpdate((n) => n + 1);
+								}}
+								formatValue={(v) => v.toFixed(precision)}
+								parseInput={(text) => parseFloat(text)}
+							/>
+						</div>
+					);
+				}
+
+				if (field.type === "select" && field.options) {
+					return (
+						<div
+							key={field.id}
+							className="flex items-center justify-between gap-2 rounded-lg bg-foreground/[0.03] px-2.5 py-1.5"
+						>
+							<span className="text-[11px] text-muted-foreground flex-shrink-0">
+								{field.label}
+							</span>
+							<Select
+								value={String(value)}
+								onValueChange={(v) => {
+									extensionHost.setExtensionSetting(extensionId, field.id, v);
+									forceUpdate((n) => n + 1);
+								}}
+							>
+								<SelectTrigger className="h-6 w-24 text-[10px] border-foreground/10 bg-foreground/[0.03]">
+									<SelectValue />
+								</SelectTrigger>
+								<SelectContent>
+									{field.options.map((opt) => (
+										<SelectItem
+											key={opt.value}
+											value={opt.value}
+											className="text-[10px]"
+										>
+											{opt.label}
+										</SelectItem>
+									))}
+								</SelectContent>
+							</Select>
+						</div>
+					);
+				}
+
+				if (field.type === "color") {
+					return (
+						<div
+							key={field.id}
+							className="flex items-center justify-between gap-2 rounded-lg bg-foreground/[0.03] px-2.5 py-1.5"
+						>
+							<span className="text-[11px] text-muted-foreground flex-shrink-0">
+								{field.label}
+							</span>
+							<input
+								type="color"
+								value={String(value)}
+								onChange={(e) => {
+									extensionHost.setExtensionSetting(
+										extensionId,
+										field.id,
+										e.target.value,
+									);
+									forceUpdate((n) => n + 1);
+								}}
+								className="w-7 h-5 rounded border border-foreground/10 cursor-pointer bg-transparent"
+							/>
+						</div>
+					);
+				}
+
+				if (field.type === "text") {
+					return (
+						<div
+							key={field.id}
+							className="flex items-center justify-between gap-2 rounded-lg bg-foreground/[0.03] px-2.5 py-1.5"
+						>
+							<span className="text-[11px] text-muted-foreground flex-shrink-0">
+								{field.label}
+							</span>
+							<input
+								type="text"
+								value={String(value)}
+								onChange={(e) => {
+									extensionHost.setExtensionSetting(
+										extensionId,
+										field.id,
+										e.target.value,
+									);
+									forceUpdate((n) => n + 1);
+								}}
+								className="w-24 h-6 rounded bg-foreground/[0.06] border border-foreground/10 px-1.5 text-[10px] text-foreground"
+							/>
+						</div>
+					);
+				}
+
+				return null;
+			})}
+		</div>
 	);
 }
 
@@ -609,6 +791,8 @@ interface SettingsPanelProps {
 	onClearWebcam?: () => void;
 	padding?: Padding;
 	onPaddingChange?: (padding: Padding) => void;
+	frame?: string | null;
+	onFrameChange?: (frameId: string | null) => void;
 	cropRegion?: CropRegion;
 	onCropChange?: (region: CropRegion) => void;
 	aspectRatio: AspectRatio;
@@ -1052,6 +1236,8 @@ export function SettingsPanel({
 	onClearWebcam,
 	padding = DEFAULT_PADDING,
 	onPaddingChange,
+	frame = null,
+	onFrameChange,
 	cropRegion,
 	onCropChange,
 	aspectRatio,
@@ -1096,7 +1282,13 @@ export function SettingsPanel({
 	const clipSpeedRange = useMemo(getPreviewPlaybackRateRange, []);
 	const [builtInWallpapers, setBuiltInWallpapers] =
 		useState<BuiltInWallpaper[]>(BUILT_IN_WALLPAPERS);
+	const [extensionWallpapers, setExtensionWallpapers] = useState<
+		ReturnType<typeof extensionHost.getContributedWallpapers>
+	>([]);
 	const [wallpaperPreviewPaths, setWallpaperPreviewPaths] = useState<string[]>([]);
+	const [extensionWallpaperPreviewUrls, setExtensionWallpaperPreviewUrls] = useState<
+		Record<string, string>
+	>({});
 	const [customImages, setCustomImages] = useState<string[]>(
 		initialEditorPreferences.customWallpapers,
 	);
@@ -1112,6 +1304,10 @@ export function SettingsPanel({
 	const builtInWallpaperPaths = useMemo(
 		() => builtInWallpapers.map((wallpaper) => wallpaper.publicPath),
 		[builtInWallpapers],
+	);
+	const extensionWallpaperPaths = useMemo(
+		() => extensionWallpapers.map((wallpaper) => wallpaper.resolvedUrl),
+		[extensionWallpapers],
 	);
 	const captionCueCount = autoCaptions.length;
 	const updateAutoCaptionSettings = (partial: Partial<AutoCaptionSettings>) => {
@@ -1203,6 +1399,57 @@ export function SettingsPanel({
 		};
 	}, [activeEffectSection, isBackgroundPanel]);
 
+	useEffect(() => {
+		let cancelled = false;
+
+		const updateExtensionAssets = async () => {
+			const wallpapers = extensionHost.getContributedWallpapers();
+			const cursorStyles = extensionHost.getContributedCursorStyles();
+			const [wallpaperPreviewEntries, cursorPreviewEntries] = await Promise.all([
+				Promise.all(
+					wallpapers.map(
+						async (wallpaper) =>
+							[
+								wallpaper.id,
+								isVideoWallpaperSource(wallpaper.resolvedThumbnailUrl)
+									? wallpaper.resolvedThumbnailUrl
+									: await getWallpaperThumbnailUrl(
+											wallpaper.resolvedThumbnailUrl,
+										),
+							] as const,
+					),
+				),
+				Promise.all(
+					cursorStyles.map(
+						async (cursorStyle) =>
+							[
+								cursorStyle.id,
+								await getRenderableAssetUrl(cursorStyle.resolvedDefaultUrl),
+							] as const,
+					),
+				),
+			]);
+
+			if (cancelled) {
+				return;
+			}
+
+			setExtensionWallpapers(wallpapers);
+			setExtensionWallpaperPreviewUrls(Object.fromEntries(wallpaperPreviewEntries));
+			setExtensionCursorStyles(cursorStyles);
+			setExtensionCursorPreviewUrls(Object.fromEntries(cursorPreviewEntries));
+		};
+
+		void extensionHost.autoActivateBuiltins().then(updateExtensionAssets);
+		const unsubscribe = extensionHost.onChange(() => {
+			void updateExtensionAssets();
+		});
+
+		return () => {
+			cancelled = true;
+			unsubscribe();
+		};
+	}, []);
 	const colorPalette = [
 		"#FF0000",
 		"#FFD700",
@@ -1230,19 +1477,70 @@ export function SettingsPanel({
 	);
 	const removeBackgroundEnabled = aspectRatio === "native" && isZeroPadding(padding);
 
+	// Device frames from extension system
+	const [availableFrames, setAvailableFrames] = useState<FrameInstance[]>([]);
+	useEffect(() => {
+		const update = () => setAvailableFrames(extensionHost.getFrames());
+		update();
+		return extensionHost.onChange(update);
+	}, []);
+
+	// Extension-contributed settings panels
+	const [extensionPanels, setExtensionPanels] = useState<
+		ReturnType<typeof extensionHost.getSettingsPanels>
+	>([]);
+	useEffect(() => {
+		const update = () => setExtensionPanels(extensionHost.getSettingsPanels());
+		update();
+		return extensionHost.onChange(update);
+	}, []);
+
+	const renderExtensionPanelsForSections = (...sections: string[]) =>
+		extensionPanels
+			.filter((panel) => {
+				const parentSection = panel.panel.parentSection;
+				return parentSection ? sections.includes(parentSection) : false;
+			})
+			.map((panel) => (
+				<ExtensionSettingsSection
+					key={`${panel.extensionId}/${panel.panel.id}`}
+					extensionId={panel.extensionId}
+					label={panel.panel.label}
+					fields={panel.panel.fields}
+				/>
+			));
+
 	const [backgroundTab, setBackgroundTab] = useState<BackgroundTab>(() =>
 		getBackgroundTabForWallpaper(selected),
 	);
 	const customColorInputRef = useRef<HTMLInputElement | null>(null);
 	const cursorClickEffectColorInputRef = useRef<HTMLInputElement | null>(null);
 	const defaultWebcam = initialEditorPreferences.webcam;
+	const [extensionCursorStyles, setExtensionCursorStyles] = useState<
+		ReturnType<typeof extensionHost.getContributedCursorStyles>
+	>([]);
 	const [builtInCursorPreviewUrls, setBuiltInCursorPreviewUrls] = useState<
 		Partial<Record<string, string>>
 	>({});
+	const [extensionCursorPreviewUrls, setExtensionCursorPreviewUrls] = useState<
+		Partial<Record<string, string>>
+	>({});
 	const [showCursorClickEffectAdvanced, setShowCursorClickEffectAdvanced] = useState(false);
-	const cursorPreviewUrls = builtInCursorPreviewUrls;
+	const cursorPreviewUrls = useMemo(
+		() => ({ ...builtInCursorPreviewUrls, ...extensionCursorPreviewUrls }),
+		[builtInCursorPreviewUrls, extensionCursorPreviewUrls],
+	);
 	const showDevMotionControls = import.meta.env.DEV;
-	const cursorStyleOptions = BUILTIN_CURSOR_STYLE_OPTIONS;
+	const cursorStyleOptions = useMemo<CursorStyleOption[]>(
+		() => [
+			...BUILTIN_CURSOR_STYLE_OPTIONS,
+			...extensionCursorStyles.map((cursorStyle) => ({
+				value: cursorStyle.id as CursorStyle,
+				label: cursorStyle.cursorStyle.label,
+			})),
+		],
+		[extensionCursorStyles],
+	);
 
 	useEffect(() => {
 		let cancelled = false;
@@ -1303,12 +1601,14 @@ export function SettingsPanel({
 		}
 
 		const isKnownWallpaper =
-			builtInWallpaperPaths.includes(selected) || wallpaperPreviewPaths.includes(selected);
+			builtInWallpaperPaths.includes(selected) ||
+			wallpaperPreviewPaths.includes(selected) ||
+			extensionWallpaperPaths.includes(selected);
 
 		if (!isKnownWallpaper && isVideoWallpaperSource(selected)) {
 			setCustomImages((prev) => (prev.includes(selected) ? prev : [selected, ...prev]));
 		}
-	}, [builtInWallpaperPaths, selected, wallpaperPreviewPaths]);
+	}, [builtInWallpaperPaths, extensionWallpaperPaths, selected, wallpaperPreviewPaths]);
 
 	const imageWallpaperTiles = useMemo<WallpaperTile[]>(() => {
 		const imageWallpapers = builtInWallpapers.filter(
@@ -1328,8 +1628,24 @@ export function SettingsPanel({
 				};
 			});
 
-		return builtInTiles;
-	}, [builtInWallpaperPaths, builtInWallpapers, wallpaperPreviewPaths]);
+		const extensionTiles = extensionWallpapers
+			.filter((wallpaper) => !isVideoWallpaperSource(wallpaper.resolvedUrl))
+			.map((wallpaper) => ({
+				key: wallpaper.id,
+				label: wallpaper.wallpaper.label,
+				value: wallpaper.resolvedUrl,
+				previewUrl:
+					extensionWallpaperPreviewUrls[wallpaper.id] ?? wallpaper.resolvedThumbnailUrl,
+			}));
+
+		return [...builtInTiles, ...extensionTiles];
+	}, [
+		builtInWallpaperPaths,
+		builtInWallpapers,
+		extensionWallpaperPreviewUrls,
+		extensionWallpapers,
+		wallpaperPreviewPaths,
+	]);
 
 	const videoWallpaperTiles = useMemo<WallpaperTile[]>(() => {
 		const builtInTiles = builtInWallpapers
@@ -1341,8 +1657,18 @@ export function SettingsPanel({
 				previewUrl: wallpaper.publicPath,
 			}));
 
-		return builtInTiles;
-	}, [builtInWallpapers]);
+		const extensionTiles = extensionWallpapers
+			.filter((wallpaper) => isVideoWallpaperSource(wallpaper.resolvedUrl))
+			.map((wallpaper) => ({
+				key: wallpaper.id,
+				label: wallpaper.wallpaper.label,
+				value: wallpaper.resolvedUrl,
+				previewUrl:
+					extensionWallpaperPreviewUrls[wallpaper.id] ?? wallpaper.resolvedThumbnailUrl,
+			}));
+
+		return [...builtInTiles, ...extensionTiles];
+	}, [builtInWallpapers, extensionWallpaperPreviewUrls, extensionWallpapers]);
 
 	useEffect(() => {
 		saveEditorPreferences({ customWallpapers: customImages });
@@ -1530,6 +1856,7 @@ export function SettingsPanel({
 		const preferredWallpaper = initialEditorPreferences.wallpaper;
 		const hasPreferredWallpaper =
 			(preferredWallpaper && builtInWallpaperPaths.includes(preferredWallpaper)) ||
+			(preferredWallpaper && extensionWallpaperPaths.includes(preferredWallpaper)) ||
 			(preferredWallpaper && customImages.includes(preferredWallpaper)) ||
 			(preferredWallpaper && isHexWallpaper(preferredWallpaper)) ||
 			(preferredWallpaper && GRADIENTS.includes(preferredWallpaper));
@@ -1537,6 +1864,7 @@ export function SettingsPanel({
 		onWallpaperChange(
 			(hasPreferredWallpaper ? preferredWallpaper : "") ||
 				builtInWallpaperPaths[0] ||
+				extensionWallpaperPaths[0] ||
 				BUILT_IN_WALLPAPERS[0]?.publicPath ||
 				"",
 		);
@@ -1618,10 +1946,17 @@ export function SettingsPanel({
 	};
 
 	const resetFrameSection = () => {
+		const preferredFrame = initialEditorPreferences.frame;
+		const resolvedFrame = preferredFrame
+			? availableFrames.some((candidate) => candidate.id === preferredFrame)
+				? preferredFrame
+				: null
+			: null;
 		onShadowChange?.(initialEditorPreferences.shadowIntensity);
 		onBorderRadiusChange?.(initialEditorPreferences.borderRadius);
 		onAspectRatioChange?.(initialEditorPreferences.aspectRatio);
 		onPaddingChange?.({ ...initialEditorPreferences.padding });
+		onFrameChange?.(resolvedFrame);
 		removeBackgroundStateRef.current = null;
 	};
 
@@ -1718,7 +2053,12 @@ export function SettingsPanel({
 		setCustomImages((prev) => prev.filter((img) => img !== imageUrl));
 		// If the removed image was selected, clear selection
 		if (selected === imageUrl) {
-			onWallpaperChange(builtInWallpaperPaths[0] ?? BUILT_IN_WALLPAPERS[0]?.publicPath ?? "");
+			onWallpaperChange(
+				builtInWallpaperPaths[0] ??
+					extensionWallpaperPaths[0] ??
+					BUILT_IN_WALLPAPERS[0]?.publicPath ??
+					"",
+			);
 		}
 	};
 
@@ -2203,6 +2543,53 @@ export function SettingsPanel({
 						className="data-[state=checked]:bg-[#2563EB] scale-75"
 					/>
 				</div>
+				{/* Frame Picker */}
+				{availableFrames.length > 0 && (
+					<div className="flex flex-col gap-1.5 mt-1">
+						<div className="flex items-center justify-between">
+							<span className="text-[10px] text-muted-foreground">Frame</span>
+							{frame && (
+								<button
+									type="button"
+									onClick={() => onFrameChange?.(null)}
+									className="text-[9px] text-[#2563EB] hover:opacity-80"
+								>
+									Remove
+								</button>
+							)}
+						</div>
+						<div className="grid grid-cols-3 gap-1.5">
+							{availableFrames.map((f) => {
+								const isSelected = frame === f.id;
+								return (
+									<button
+										key={f.id}
+										type="button"
+										onClick={() => onFrameChange?.(isSelected ? null : f.id)}
+										className={cn(
+											"flex flex-col items-center gap-1 p-1.5 rounded-lg border transition-all text-center",
+											isSelected
+												? "border-[#2563EB]/50 bg-[#2563EB]/10 ring-1 ring-[#2563EB]/30"
+												: "border-foreground/[0.06] bg-white/[0.02] hover:bg-foreground/[0.05]",
+										)}
+									>
+										<div className="w-full aspect-video rounded bg-foreground/10 overflow-hidden flex items-center justify-center">
+											<img
+												src={f.thumbnailPath}
+												alt={f.label}
+												className="w-full h-full object-contain"
+												draggable={false}
+											/>
+										</div>
+										<span className="text-[8px] text-muted-foreground truncate w-full leading-tight">
+											{f.label}
+										</span>
+									</button>
+								);
+							})}
+						</div>
+					</div>
+				)}
 			</div>
 		</section>
 	);
@@ -2524,6 +2911,7 @@ export function SettingsPanel({
 					formatValue={(value) => `${Math.round(value * 100)}%`}
 					parseInput={(text) => parseFloat(text.replace(/%$/, "")) / 100}
 				/>
+				{renderExtensionPanelsForSections("captions")}
 			</div>
 		</section>
 	);
@@ -2844,6 +3232,7 @@ export function SettingsPanel({
 				{backgroundSettingsContent}
 				{frameSectionContent}
 				{cropSectionContent}
+				{renderExtensionPanelsForSections("scene", "appearance", "frame", "crop")}
 			</div>
 		);
 
@@ -2968,6 +3357,7 @@ export function SettingsPanel({
 						{tSettings("zoom.deleteZoom")}
 					</Button>
 				)}
+				{renderExtensionPanelsForSections("zoom", "appearance", "frame", "crop")}
 			</section>
 		);
 
@@ -3015,7 +3405,10 @@ export function SettingsPanel({
 				<SectionLabel>{tSettings("clip.title", "Clip")}</SectionLabel>
 				<SliderControl
 					label={tSettings("speed.label", "Speed")}
-					value={Math.min(clipSpeedRange.max, Math.max(clipSpeedRange.min, selectedClipSpeed ?? 1))}
+					value={Math.min(
+						clipSpeedRange.max,
+						Math.max(clipSpeedRange.min, selectedClipSpeed ?? 1),
+					)}
 					defaultValue={1}
 					min={clipSpeedRange.min}
 					max={clipSpeedRange.max}
@@ -3025,9 +3418,14 @@ export function SettingsPanel({
 					parseInput={(text) => Number.parseFloat(text)}
 				/>
 				{selectedClipSpeed != null &&
-					(selectedClipSpeed < clipSpeedRange.min || selectedClipSpeed > clipSpeedRange.max) && (
+					(selectedClipSpeed < clipSpeedRange.min ||
+						selectedClipSpeed > clipSpeedRange.max) && (
 						<p className="text-[11px] text-muted-foreground" role="status">
-							{selectedClipSpeed}× — {tSettings("speed.unsupported", "Not supported for preview on this device")}
+							{selectedClipSpeed}× —{" "}
+							{tSettings(
+								"speed.unsupported",
+								"Not supported for preview on this device",
+							)}
 						</p>
 					)}
 				<label className="flex items-center justify-between rounded-lg bg-foreground/[0.03] px-2.5 py-2">
@@ -3351,6 +3749,7 @@ export function SettingsPanel({
 								</div>
 							) : null}
 						</div>
+						{renderExtensionPanelsForSections("cursor")}
 					</section>
 				);
 			case "webcam":
@@ -3611,10 +4010,32 @@ export function SettingsPanel({
 									</div>
 								</div>
 							</div>
+							{renderExtensionPanelsForSections("webcam")}
 						</div>
 					</section>
 				);
 			default: {
+				// Handle extension-contributed standalone section pages (ext:extensionId/panelId)
+				if (activeEffectSection?.startsWith("ext:")) {
+					const panels = extensionPanels.filter(
+						(p) =>
+							!p.panel.parentSection &&
+							`ext:${p.extensionId}/${p.panel.id}` === activeEffectSection,
+					);
+					if (panels.length > 0) {
+						const p = panels[0];
+						return (
+							<section className="flex flex-col gap-2">
+								<SectionLabel>{p.panel.label}</SectionLabel>
+								<ExtensionSettingsSection
+									extensionId={p.extensionId}
+									label={p.panel.label}
+									fields={p.panel.fields}
+								/>
+							</section>
+						);
+					}
+				}
 				return sceneSectionContent;
 			}
 		}

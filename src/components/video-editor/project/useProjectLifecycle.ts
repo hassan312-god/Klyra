@@ -127,6 +127,7 @@ export function useProjectLifecycle(input: Input) {
 		project.setVideoPath(await resolveVideoUrl(sourcePath));
 
 		appearance.setWallpaper(editor.wallpaper);
+		appearance.setFrame(editor.frame);
 		appearance.setShadowIntensity(editor.shadowIntensity);
 		appearance.setBackgroundBlur(editor.backgroundBlur);
 		appearance.setZoomMotionBlur(editor.zoomMotionBlur);
