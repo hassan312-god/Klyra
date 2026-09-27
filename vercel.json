@@ -1,7 +1,19 @@
 {
-	"$schema": "https://openapi.vercel.sh/vercel.json",
-	"framework": null,
-	"installCommand": "echo \"Static download site: nothing to install\"",
-	"buildCommand": "echo \"Static download site: nothing to build\"",
-	"outputDirectory": "website"
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
+  "installCommand": "echo \"Static download site: nothing to install\"",
+  "buildCommand": "echo \"Static download site: nothing to build\"",
+  "outputDirectory": "website",
+  "redirects": [
+    {
+      "source": "/download/windows",
+      "destination": "https://github.com/hassan312-god/Klyra/releases/latest/download/Klyra-windows-x64.exe",
+      "permanent": false
+    },
+    {
+      "source": "/download/linux",
+      "destination": "https://github.com/hassan312-god/Klyra/releases/latest/download/Klyra-linux-x64.AppImage",
+      "permanent": false
+    }
+  ]
 }
