@@ -168,7 +168,7 @@ Klyra 拥有一个社区驱动的扩展系统。任何人都可以构建和发�
 
 预构建发布版本请见：
 
-https://github.com/hassan312-god/record/releases
+https://github.com/hassan312-god/Klyra/releases
 
 ---
 
@@ -201,7 +201,7 @@ sudo apt install build-essential cmake libx11-dev libxtst-dev libxrandr-dev libx
 ### 步骤
 
 ```bash
-git clone https://github.com/hassan312-god/record.git klyra
+git clone https://github.com/hassan312-god/Klyra.git klyra
 cd klyra
 npm install
 npm run dev
@@ -358,7 +358,7 @@ Klyra 将平台相关的捕获层与基于渲染器的编辑、导出流程结�
 
 问题反馈和功能建议：
 
-https://github.com/hassan312-god/record/issues
+https://github.com/hassan312-god/Klyra/issues
 
 欢迎提交 Pull Request。
 
