@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Klyra — Vidéos de démo soignées, sans montage</title>
+<meta name="description" content="Klyra enregistre votre écran et produit des vidéos de démo soignées : zooms automatiques, curseur fluide, musique libre de droits. Windows et Linux." />
+<link rel="icon" type="image/png" href="icon.png" />
+<style>
+	:root {
+		--bg: #0b0b14;
+		--panel: #14142200;
+		--text: #f4f4fb;
+		--muted: #a3a3bd;
+		--line: rgba(255, 255, 255, 0.09);
+		--blue: #2f6bff;
+		--violet: #8b5cf6;
+	}
+	* { box-sizing: border-box; }
+	html { color-scheme: dark; }
+	body {
+		margin: 0;
+		background: radial-gradient(1200px 600px at 50% -10%, rgba(47, 107, 255, 0.28), transparent 70%), var(--bg);
+		color: var(--text);
+		font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+		line-height: 1.55;
+	}
+	a { color: inherit; }
+	.wrap { max-width: 1040px; margin: 0 auto; padding: 0 16px; }
+	header { display: flex; align-items: center; justify-content: space-between; padding: 22px 0; }
+	.brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 20px; text-decoration: none; }
+	.brand img { width: 34px; height: 34px; }
+	nav a { color: var(--muted); text-decoration: none; font-size: 14px; margin-left: 20px; }
+	nav a:hover { color: var(--text); }
+	.hero { text-align: center; padding: 72px 0 40px; }
+	.hero img { width: 104px; height: 104px; filter: drop-shadow(0 18px 40px rgba(139, 92, 246, 0.45)); }
+	h1 { font-size: clamp(34px, 6vw, 60px); line-height: 1.08; margin: 22px 0 16px; letter-spacing: -0.02em; }
+	.grad { background: linear-gradient(90deg, #5aa2ff, var(--violet)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+	.lead { color: var(--muted); font-size: 18px; max-width: 620px; margin: 0 auto; }
+	.downloads { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin: 34px 0 12px; }
+	.btn {
+		display: inline-flex; align-items: center; gap: 10px; padding: 14px 22px; border-radius: 12px;
+		font-weight: 600; text-decoration: none; border: 1px solid var(--line); background: rgba(255, 255, 255, 0.04);
+		transition: transform 0.15s ease, background 0.15s ease;
+	}
+	.btn:hover { transform: translateY(-1px); background: rgba(255, 255, 255, 0.08); }
+	.btn.primary { background: linear-gradient(90deg, var(--blue), var(--violet)); border-color: transparent; }
+	.btn.disabled { opacity: 0.5; pointer-events: none; }
+	.btn svg { width: 18px; height: 18px; }
+	.note { color: var(--muted); font-size: 13px; }
+	section { padding: 56px 0; border-top: 1px solid var(--line); }
+	h2 { font-size: 28px; margin: 0 0 24px; text-align: center; }
+	.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 14px; }
+	.card { border: 1px solid var(--line); border-radius: 16px; padding: 20px; background: rgba(255, 255, 255, 0.025); }
+	.card h3 { margin: 0 0 6px; font-size: 16px; }
+	.card p { margin: 0; color: var(--muted); font-size: 14px; }
+	.steps { counter-reset: step; list-style: none; padding: 0; max-width: 640px; margin: 0 auto; }
+	.steps li { counter-increment: step; position: relative; padding: 14px 0 14px 48px; border-bottom: 1px solid var(--line); color: var(--muted); }
+	.steps li::before {
+		content: counter(step); position: absolute; left: 0; top: 12px; width: 32px; height: 32px; border-radius: 50%;
+		display: grid; place-items: center; font-weight: 700; color: var(--text); background: linear-gradient(135deg, var(--blue), var(--violet));
+	}
+	.steps strong { color: var(--text); }
+	footer { padding: 40px 0 56px; color: var(--muted); font-size: 13px; text-align: center; border-top: 1px solid var(--line); }
+	footer p { margin: 6px 0; }
+	@media (max-width: 560px) { nav { display: none; } .hero { padding-top: 40px; } }
+</style>
+</head>
+<body>
+	<div class="wrap">
+		<header>
+			<a class="brand" href="#"><img src="icon.png" alt="" />Klyra</a>
+			<nav>
+				<a href="#fonctionnalites">Fonctionnalités</a>
+				<a href="#installation">Installation</a>
+				<a href="https://github.com/hassan312-god/Klyra">Code source</a>
+			</nav>
+		</header>
+
+		<main>
+			<div class="hero">
+				<img src="icon.png" alt="Logo Klyra" />
+				<h1>Des vidéos de démo <span class="grad">soignées</span>,<br />sans savoir monter.</h1>
+				<p class="lead">Enregistrez votre écran : Klyra ajoute les zooms, lisse le curseur, pose une musique libre de droits et exporte une vidéo prête à publier.</p>
+				<div class="downloads">
+					<a class="btn primary" href="https://github.com/hassan312-god/Klyra/releases/latest/download/Klyra-windows-x64.exe">
+						<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3 5.5 10.5 4.5v7H3zM11.5 4.3 21 3v8.5h-9.5zM3 12.5h7.5v7L3 18.5zM11.5 12.5H21V21l-9.5-1.3z"/></svg>
+						Télécharger pour Windows
+					</a>
+					<a class="btn" href="https://github.com/hassan312-god/Klyra/releases/latest/download/Klyra-linux-x64.AppImage">
+						<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a5 5 0 0 0-5 5v3.5c-1.6 1.6-3 3.8-3 6.2 0 1.8 1.6 2.3 3 2.3h10c1.4 0 3-.5 3-2.3 0-2.4-1.4-4.6-3-6.2V7a5 5 0 0 0-5-5z"/></svg>
+						Linux (AppImage)
+					</a>
+					<span class="btn disabled">macOS — bientôt</span>
+				</div>
+				<p class="note">Gratuit · Mises à jour automatiques · <a href="https://github.com/hassan312-god/Klyra/releases">Toutes les versions</a></p>
+			</div>
+
+			<section id="fonctionnalites">
+				<h2>Tout ce qu'il faut pour une bonne démo</h2>
+				<div class="grid">
+					<div class="card"><h3>Zooms automatiques</h3><p>La caméra suit vos clics et zoome là où ça se passe.</p></div>
+					<div class="card"><h3>Curseur fluide</h3><p>Mouvements lissés, effets de clic et styles de curseur.</p></div>
+					<div class="card"><h3>Musique libre de droits</h3><p>Six morceaux originaux inclus, utilisables même dans une vidéo commerciale.</p></div>
+					<div class="card"><h3>Curseur en rythme</h3><p>Le curseur pulse au tempo de la musique pour un rendu plus vivant.</p></div>
+					<div class="card"><h3>Extensions</h3><p>Projecteur, filigrane, titre d'intro… et vos propres extensions.</p></div>
+					<div class="card"><h3>Sous-titres automatiques</h3><p>Transcription locale, sans envoyer votre voix sur Internet.</p></div>
+				</div>
+			</section>
+
+			<section id="installation">
+				<h2>Installation</h2>
+				<ol class="steps">
+					<li><strong>Téléchargez</strong> l'installeur pour votre système avec les boutons ci-dessus.</li>
+					<li><strong>Windows :</strong> si SmartScreen affiche « Éditeur inconnu », cliquez sur « Informations complémentaires » puis « Exécuter quand même ».</li>
+					<li><strong>Linux :</strong> rendez le fichier exécutable (<code>chmod +x Klyra-linux-x64.AppImage</code>) puis lancez-le.</li>
+					<li>Les versions suivantes s'installent <strong>automatiquement</strong> depuis l'application.</li>
+				</ol>
+			</section>
+		</main>
+
+		<footer>
+			<p>Klyra est un logiciel libre sous licence <a href="https://github.com/hassan312-god/Klyra/blob/main/LICENSE.md">AGPL-3.0</a> · <a href="https://github.com/hassan312-god/Klyra">Code source</a></p>
+			<p>Klyra est dérivé de <a href="https://github.com/webadderallorg/Recordly">Recordly</a>.</p>
+			<p>Contact : <a href="mailto:keitahassan3001@gmail.com">keitahassan3001@gmail.com</a></p>
+		</footer>
+	</div>
+</body>
+</html>
