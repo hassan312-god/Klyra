@@ -617,6 +617,26 @@ contextBridge.exposeInMainWorld("electronAPI", {
 	getSystemCursorAssets: () => {
 		return ipcRenderer.invoke("get-system-cursor-assets");
 	},
+	openAutoDemo: () => ipcRenderer.invoke("auto-demo:open-control"),
+	autoDemoStartCapture: (url: string) => ipcRenderer.invoke("auto-demo:start-capture", url),
+	autoDemoStopCapture: () => ipcRenderer.invoke("auto-demo:stop-capture"),
+	autoDemoRun: (scenario: unknown) => ipcRenderer.invoke("auto-demo:run", scenario),
+	autoDemoCancel: () => ipcRenderer.invoke("auto-demo:cancel"),
+	onAutoDemoStep: (callback: (step: unknown) => void) => {
+		const listener = (_event: Electron.IpcRendererEvent, step: unknown) => callback(step);
+		ipcRenderer.on("auto-demo:step", listener);
+		return () => ipcRenderer.removeListener("auto-demo:step", listener);
+	},
+	onAutoDemoStatus: (callback: (status: unknown) => void) => {
+		const listener = (_event: Electron.IpcRendererEvent, status: unknown) => callback(status);
+		ipcRenderer.on("auto-demo:status", listener);
+		return () => ipcRenderer.removeListener("auto-demo:status", listener);
+	},
+	onAutoDemoStartRecording: (callback: () => void) => {
+		const listener = () => callback();
+		ipcRenderer.on("auto-demo:start-recording", listener);
+		return () => ipcRenderer.removeListener("auto-demo:start-recording", listener);
+	},
 	onStopRecordingFromTray: (callback: () => void) => {
 		const listener = () => callback();
 		ipcRenderer.on("stop-recording-from-tray", listener);

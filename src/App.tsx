@@ -17,6 +17,11 @@ const UpdateToastWindow = lazy(() =>
 		default: module.UpdateToastWindow,
 	})),
 );
+const AutoDemoWindow = lazy(() =>
+	import("./components/autoDemo/AutoDemoWindow").then((module) => ({
+		default: module.AutoDemoWindow,
+	})),
+);
 const EditorWindow = lazy(() => import("./components/video-editor/EditorWindow"));
 
 export default function App() {
@@ -54,9 +59,7 @@ export default function App() {
 
 	useEffect(() => {
 		document.title =
-			windowType === "editor"
-				? t("app.editorTitle", "Klyra Editor")
-				: t("app.name", "Klyra");
+			windowType === "editor" ? t("app.editorTitle", "Klyra Editor") : t("app.name", "Klyra");
 	}, [windowType, t]);
 
 	let content;
@@ -72,6 +75,9 @@ export default function App() {
 			break;
 		case "update-toast":
 			content = <UpdateToastWindow />;
+			break;
+		case "auto-demo":
+			content = <AutoDemoWindow />;
 			break;
 		case "editor":
 			content = <EditorWindow />;

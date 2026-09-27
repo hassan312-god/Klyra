@@ -3,6 +3,17 @@
 All notable changes to Klyra are documented here. Versions follow
 [Semantic Versioning](https://semver.org/).
 
+## 1.8.0
+
+### Added
+- **Auto demo from a website** (menu ··· → *Auto demo from a website*): type your
+  site's address, show Klyra the steps once (clicks, typing, Enter, scrolling),
+  then *Play and record*. Klyra opens the site, replays every step with a smooth
+  cursor and records it live; the video opens in the editor with the clicks
+  already in the cursor track, so zooms and click effects work as usual.
+  Steps can be edited, reordered, given pauses, and exported or imported as JSON.
+  Passwords are never recorded.
+
 ## 1.7.0
 
 ### Added
