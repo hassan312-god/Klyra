@@ -608,6 +608,16 @@ interface Window {
 			cursors: Record<string, SystemCursorAsset>;
 			error?: string;
 		}>;
+		openAutoDemo: () => Promise<void>;
+		autoDemoStartCapture: (
+			url: string,
+		) => Promise<{ success: boolean; url?: string; error?: string }>;
+		autoDemoStopCapture: () => Promise<{ success: boolean }>;
+		autoDemoRun: (scenario: unknown) => Promise<{ success: boolean; error?: string }>;
+		autoDemoCancel: () => Promise<{ success: boolean }>;
+		onAutoDemoStep: (callback: (step: unknown) => void) => () => void;
+		onAutoDemoStatus: (callback: (status: unknown) => void) => () => void;
+		onAutoDemoStartRecording: (callback: () => void) => () => void;
 		onStopRecordingFromTray: (callback: () => void) => () => void;
 		onRecordingStateChanged: (
 			callback: (state: { recording: boolean; sourceName: string }) => void,

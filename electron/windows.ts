@@ -19,8 +19,7 @@ const nodeRequire = createRequire(import.meta.url);
 const APP_ROOT = path.join(electronWindowsDir, "..");
 const VITE_DEV_SERVER_URL = process.env["VITE_DEV_SERVER_URL"];
 const RENDERER_DIST = path.join(APP_ROOT, "dist");
-const WINDOW_ICON_FILENAME =
-	process.platform === "darwin" ? "klyramac-512.png" : "klyra-512.png";
+const WINDOW_ICON_FILENAME = process.platform === "darwin" ? "klyramac-512.png" : "klyra-512.png";
 const WINDOW_ICON_PATH = path.join(
 	process.env.VITE_PUBLIC || RENDERER_DIST,
 	"app-icons",
@@ -1022,6 +1021,62 @@ export function createSourceSelectorWindow(): BrowserWindow {
 	} else {
 		win.loadFile(path.join(RENDERER_DIST, "index.html"), {
 			query: { windowType: "source-selector" },
+		});
+	}
+
+	return win;
+}
+
+let autoDemoControlWindow: BrowserWindow | null = null;
+
+export function getAutoDemoControlWindow(): BrowserWindow | null {
+	return autoDemoControlWindow && !autoDemoControlWindow.isDestroyed()
+		? autoDemoControlWindow
+		: null;
+}
+
+export function createAutoDemoControlWindow(): BrowserWindow {
+	const existing = getAutoDemoControlWindow();
+	if (existing) {
+		existing.show();
+		existing.focus();
+		return existing;
+	}
+
+	const win = new BrowserWindow({
+		width: 460,
+		height: 640,
+		minWidth: 400,
+		minHeight: 480,
+		title: "Klyra Auto Demo",
+		show: false,
+		...(process.platform !== "darwin" && {
+			icon: WINDOW_ICON_PATH,
+		}),
+		webPreferences: {
+			preload: path.join(electronWindowsDir, "preload.mjs"),
+			nodeIntegration: false,
+			contextIsolation: true,
+		},
+	});
+	autoDemoControlWindow = win;
+	win.setMenuBarVisibility(false);
+	win.once("ready-to-show", () => {
+		if (!win.isDestroyed()) {
+			win.show();
+		}
+	});
+	win.on("closed", () => {
+		if (autoDemoControlWindow === win) {
+			autoDemoControlWindow = null;
+		}
+	});
+
+	if (VITE_DEV_SERVER_URL) {
+		win.loadURL(VITE_DEV_SERVER_URL + "?windowType=auto-demo");
+	} else {
+		win.loadFile(path.join(RENDERER_DIST, "index.html"), {
+			query: { windowType: "auto-demo" },
 		});
 	}
 

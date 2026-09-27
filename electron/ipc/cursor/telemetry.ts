@@ -21,6 +21,7 @@ import {
 	setCursorCaptureInterval,
 	setCursorCapturePauseStartedAtMs,
 	setPendingCursorSamples,
+	syntheticCursorPoint,
 } from "../state";
 import type { CursorInteractionType, CursorTelemetryPoint, CursorVisualType } from "../types";
 import { getScreen, getTelemetryPathForVideo } from "../utils";
@@ -165,6 +166,12 @@ export function getCursorCaptureElapsedMs(nowMs = Date.now()) {
 }
 
 export function getNormalizedCursorPoint() {
+	if (syntheticCursorPoint) {
+		return {
+			cx: clamp(syntheticCursorPoint.cx, 0, 1),
+			cy: clamp(syntheticCursorPoint.cy, 0, 1),
+		};
+	}
 	const fallbackCursor = getScreen().getCursorScreenPoint();
 	const linuxCursorCache = process.platform === "linux" ? linuxCursorScreenPoint : null;
 	const isLinuxCacheFresh = !!linuxCursorCache && Date.now() - linuxCursorCache.updatedAt <= 1000;

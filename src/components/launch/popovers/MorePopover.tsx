@@ -2,6 +2,7 @@ import {
 	EyeIcon,
 	EyeSlashIcon,
 	FolderOpenIcon,
+	MagicWandIcon,
 	TranslateIcon,
 	VideoCameraIcon,
 	ArrowClockwiseIcon,
@@ -41,6 +42,7 @@ export function MorePopover({
 	onChooseRecordingsDirectory,
 	onOpenVideoFile,
 	onOpenProjectBrowser,
+	onOpenAutoDemo,
 	showDevUpdatePreview,
 	onPreviewUpdateUi,
 	appVersion,
@@ -52,6 +54,7 @@ export function MorePopover({
 	onChooseRecordingsDirectory: () => void;
 	onOpenVideoFile: () => void;
 	onOpenProjectBrowser: () => void;
+	onOpenAutoDemo: () => void;
 	showDevUpdatePreview: boolean;
 	onPreviewUpdateUi: () => void;
 	appVersion: string | null;
@@ -112,6 +115,15 @@ export function MorePopover({
 				}}
 			>
 				{t("recording.openProject")}
+			</DropdownItem>
+			<DropdownItem
+				icon={<MagicWandIcon size={16} />}
+				onClick={() => {
+					requestClose(POPOVER_ID);
+					onOpenAutoDemo();
+				}}
+			>
+				{t("recording.autoDemo")}
 			</DropdownItem>
 			{showDevUpdatePreview ? (
 				<DropdownItem

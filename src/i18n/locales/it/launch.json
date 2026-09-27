@@ -53,7 +53,8 @@
 			"upToDateTitle": "Klyra {{version}} è aggiornato.",
 			"availableTitle": "Klyra {{version}} è disponibile.",
 			"availableGenericTitle": "È disponibile un aggiornamento."
-		}
+		},
+		"autoDemo": "Auto demo from a website"
 	},
 	"sourceSelector": {
 		"loadingSources": "Caricamento sorgenti...",
@@ -91,5 +92,42 @@
 		"updateNow": "Aggiorna ora",
 		"restartToUpdate": "Riavvia per aggiornare",
 		"tryAgain": "Riprova"
+	},
+	"autoDemo": {
+		"title": "Auto demo",
+		"subtitle": "Give Klyra your site's address, show it the steps once, and it replays them while recording.",
+		"urlLabel": "Website address",
+		"urlPlaceholder": "mysite.com",
+		"startCapture": "1. Show the steps",
+		"stopCapture": "Done showing",
+		"capturingHint": "Use your site in the Klyra Demo window. Every click, text and scroll is added below.",
+		"steps": "Steps",
+		"noSteps": "No steps yet. Show them on your site, or add a pause.",
+		"addWait": "Add a pause",
+		"run": "2. Play and record",
+		"cancel": "Stop",
+		"import": "Import",
+		"export": "Export",
+		"clear": "Clear",
+		"stepClick": "Click",
+		"stepType": "Type",
+		"stepPress": "Press",
+		"stepScroll": "Scroll",
+		"stepWait": "Pause",
+		"stepNavigate": "Open page",
+		"seconds": "s",
+		"moveUp": "Move up",
+		"moveDown": "Move down",
+		"remove": "Remove",
+		"statusLoading": "Opening your site…",
+		"statusWaiting": "Starting the recording…",
+		"statusPlaying": "Playing step {{current}} of {{total}}",
+		"statusFinishing": "Finishing the video…",
+		"statusDone": "Done! The video opens in the editor.",
+		"statusError": "Stopped: {{message}}",
+		"invalidUrl": "Enter a valid website address.",
+		"invalidFile": "This file is not a Klyra demo.",
+		"passwordHint": "Passwords are never recorded: type them here if the demo needs them.",
+		"hint": "Tip: leave the mouse alone while the demo plays."
 	}
 }

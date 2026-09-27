@@ -53,7 +53,8 @@
 			"upToDateTitle": "Klyra {{version}} est à jour.",
 			"availableTitle": "Klyra {{version}} est disponible.",
 			"availableGenericTitle": "Une mise à jour est disponible."
-		}
+		},
+		"autoDemo": "Démo auto depuis un site"
 	},
 	"sourceSelector": {
 		"loadingSources": "Chargement des sources...",
@@ -91,5 +92,42 @@
 		"updateNow": "Mettre à jour",
 		"restartToUpdate": "Redémarrer pour mettre à jour",
 		"tryAgain": "Réessayer"
+	},
+	"autoDemo": {
+		"title": "Démo auto",
+		"subtitle": "Donne l'adresse de ton site à Klyra, montre-lui les étapes une fois, et il les rejoue en filmant.",
+		"urlLabel": "Adresse du site",
+		"urlPlaceholder": "monsite.com",
+		"startCapture": "1. Montrer les étapes",
+		"stopCapture": "J'ai fini de montrer",
+		"capturingHint": "Utilise ton site dans la fenêtre Klyra Demo. Chaque clic, texte et défilement s'ajoute ci-dessous.",
+		"steps": "Étapes",
+		"noSteps": "Aucune étape. Montre-les sur ton site, ou ajoute une pause.",
+		"addWait": "Ajouter une pause",
+		"run": "2. Lancer et filmer",
+		"cancel": "Arrêter",
+		"import": "Importer",
+		"export": "Exporter",
+		"clear": "Tout effacer",
+		"stepClick": "Clic",
+		"stepType": "Saisie",
+		"stepPress": "Touche",
+		"stepScroll": "Défilement",
+		"stepWait": "Pause",
+		"stepNavigate": "Ouvrir la page",
+		"seconds": "s",
+		"moveUp": "Monter",
+		"moveDown": "Descendre",
+		"remove": "Supprimer",
+		"statusLoading": "Ouverture de ton site…",
+		"statusWaiting": "Démarrage de l'enregistrement…",
+		"statusPlaying": "Étape {{current}} sur {{total}}",
+		"statusFinishing": "Finalisation de la vidéo…",
+		"statusDone": "Terminé ! La vidéo s'ouvre dans l'éditeur.",
+		"statusError": "Arrêté : {{message}}",
+		"invalidUrl": "Entre une adresse de site valide.",
+		"invalidFile": "Ce fichier n'est pas une démo Klyra.",
+		"passwordHint": "Les mots de passe ne sont jamais enregistrés : tape-les ici si la démo en a besoin.",
+		"hint": "Astuce : ne touche pas la souris pendant la démo."
 	}
 }

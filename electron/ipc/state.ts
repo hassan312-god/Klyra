@@ -86,6 +86,8 @@ export let hasLoggedInteractionHookFailure = false;
 export let lastLeftClick: { timeMs: number; cx: number; cy: number } | null = null;
 export let linuxCursorScreenPoint: { x: number; y: number; updatedAt: number } | null = null;
 export let selectedWindowBounds: WindowBounds | null = null;
+// Set while an auto demo drives a synthetic cursor; normalized to the captured window.
+export let syntheticCursorPoint: { cx: number; cy: number } | null = null;
 export let windowBoundsCaptureInterval: NodeJS.Timeout | null = null;
 
 // ── Native macOS window source cache ─────────────────────────────────────────
@@ -109,6 +111,9 @@ export type { CursorInteractionType, CursorTelemetryPoint };
 // TypeScript exported `let` can be reassigned by the owning module but importers
 // cannot assign to them directly. Provide simple setters for cross-module writes.
 
+export function setSyntheticCursorPoint(v: { cx: number; cy: number } | null) {
+	syntheticCursorPoint = v;
+}
 export function setSelectedSource(v: SelectedSource | null) {
 	selectedSource = v;
 }

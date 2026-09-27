@@ -118,6 +118,19 @@ function LaunchWindowContent() {
 
 	const hudCaptureProtectionSupported = supportsHudCaptureProtection(platform ?? "");
 
+	const toggleRecordingRef = useRef(toggleRecording);
+	toggleRecordingRef.current = toggleRecording;
+	const recordingRef = useRef(recording);
+	recordingRef.current = recording;
+	useEffect(() => {
+		// The auto demo picks its own window as the source, then asks the HUD to record.
+		return window.electronAPI.onAutoDemoStartRecording(() => {
+			if (!recordingRef.current) {
+				void toggleRecordingRef.current();
+			}
+		});
+	}, []);
+
 	useEffect(() => {
 		if (!selectedDeviceId) {
 			return;
@@ -388,6 +401,9 @@ function LaunchWindowContent() {
 					refreshProjectLibrary().then(() => {
 						requestOpen("projects");
 					});
+				}}
+				onOpenAutoDemo={() => {
+					void window.electronAPI.openAutoDemo();
 				}}
 				showDevUpdatePreview={SHOW_DEV_UPDATE_PREVIEW}
 				onPreviewUpdateUi={() => {

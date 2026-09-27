@@ -27,6 +27,7 @@ import {
 	registerIpcHandlers,
 } from "./ipc/handlers";
 import { ensureMediaServer } from "./mediaServer";
+import { isAutoDemoWebContents, registerAutoDemoHandlers } from "./autoDemo/controller";
 import { hardenWebContentsNavigation, shouldHardenWebContentsType } from "./navigationPolicy";
 import { shouldGrantDisplayCapture, shouldGrantMediaPermission } from "./permissionPolicy";
 import { ensurePackagedRendererServer, getPackagedRendererBaseUrl } from "./rendererServer";
@@ -80,7 +81,7 @@ app.commandLine.appendSwitch("enable-unsafe-webgpu");
 app.commandLine.appendSwitch("enable-gpu-rasterization");
 
 app.on("web-contents-created", (_event, contents) => {
-	if (!shouldHardenWebContentsType(contents.getType())) {
+	if (!shouldHardenWebContentsType(contents.getType()) || isAutoDemoWebContents(contents)) {
 		return;
 	}
 
@@ -1016,6 +1017,7 @@ app.whenReady().then(async () => {
 			}
 		},
 	);
+	registerAutoDemoHandlers();
 
 	registerExtensionIpcHandlers();
 
