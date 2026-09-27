@@ -65,6 +65,7 @@ interface UpdateStatusSummary {
 	detail?: string;
 }
 
+type RendererExtensionInfo = import("./extensions/extensionTypes").ExtensionInfo;
 type RendererRecordingSessionData = import("./ipc/types").RecordingSessionData;
 
 interface RendererFfmpegAudioMuxMetrics {
@@ -933,6 +934,21 @@ interface Window {
 		cancelCountdown: () => Promise<{ success: boolean }>;
 		getActiveCountdown: () => Promise<{ success: boolean; seconds: number | null }>;
 		onCountdownTick: (callback: (seconds: number) => void) => () => void;
+		extensionsDiscover: () => Promise<RendererExtensionInfo[]>;
+		extensionsList: () => Promise<RendererExtensionInfo[]>;
+		extensionsGet: (id: string) => Promise<RendererExtensionInfo | null>;
+		extensionsEnable: (id: string) => Promise<{ success: boolean; error?: string }>;
+		extensionsDisable: (id: string) => Promise<{ success: boolean; error?: string }>;
+		extensionsInstallFromFolder: () => Promise<{
+			success: boolean;
+			extension?: RendererExtensionInfo;
+			message?: string;
+			error?: string;
+			canceled?: boolean;
+		}>;
+		extensionsUninstall: (id: string) => Promise<{ success: boolean; error?: string }>;
+		extensionsGetDirectory: () => Promise<{ success: boolean; path?: string; error?: string }>;
+		extensionsOpenDirectory: () => Promise<{ success: boolean; path?: string; error?: string }>;
 	};
 }
 

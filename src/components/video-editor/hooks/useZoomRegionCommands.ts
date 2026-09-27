@@ -1,5 +1,6 @@
 import type { Span } from "dnd-timeline";
 import { type Dispatch, type MutableRefObject, type SetStateAction, useCallback } from "react";
+import { extensionHost } from "@/lib/extensions";
 import {
 	clampFocusToDepth,
 	DEFAULT_AUTO_ZOOM_DEPTH,
@@ -83,6 +84,10 @@ export function useZoomRegionCommands({
 			setSelectedZoomId(id);
 			setSelectedAnnotationId(null);
 			setSelectedCaptionId(null);
+			extensionHost.emitEvent({
+				type: "timeline:region-added",
+				data: { id, startMs: newRegion.startMs, endMs: newRegion.endMs },
+			});
 		},
 		[
 			markFreshRecordingSuggestion,
@@ -106,6 +111,10 @@ export function useZoomRegionCommands({
 			};
 			markFreshRecordingSuggestion();
 			setZoomRegions((current) => [...current, newRegion]);
+			extensionHost.emitEvent({
+				type: "timeline:region-added",
+				data: { id: newRegion.id, startMs: newRegion.startMs, endMs: newRegion.endMs },
+			});
 		},
 		[markFreshRecordingSuggestion, nextZoomIdRef, setZoomRegions],
 	);
@@ -166,6 +175,7 @@ export function useZoomRegionCommands({
 		(id: string) => {
 			setZoomRegions((current) => current.filter((region) => region.id !== id));
 			if (selectedZoomId === id) setSelectedZoomId(null);
+			extensionHost.emitEvent({ type: "timeline:region-removed", data: { id } });
 		},
 		[selectedZoomId, setSelectedZoomId, setZoomRegions],
 	);

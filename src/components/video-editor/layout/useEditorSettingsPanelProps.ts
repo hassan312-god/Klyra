@@ -84,6 +84,8 @@ export function useEditorSettingsPanelProps(input: Input): ComponentProps<typeof
 		activeEffectSection,
 		selected: appearance.wallpaper,
 		onWallpaperChange: appearance.setWallpaper,
+		frame: appearance.frame,
+		onFrameChange: appearance.setFrame,
 		selectedZoomDepth: selectedZoom?.depth ?? null,
 		onZoomDepthChange: (depth) =>
 			timeline.selectedZoomId && zoomCommands.handleZoomDepthChange(depth),

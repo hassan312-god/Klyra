@@ -25,6 +25,7 @@ import {
 
 export function useAppearanceState(preferences: EditorPreferences) {
 	const [wallpaper, setWallpaper] = useState(preferences.wallpaper);
+	const [frame, setFrame] = useState<string | null>(preferences.frame);
 	const [shadowIntensity, setShadowIntensity] = useState(preferences.shadowIntensity);
 	const [backgroundBlur, setBackgroundBlur] = useState(preferences.backgroundBlur);
 	const [zoomMotionBlur, setZoomMotionBlur] = useState(preferences.zoomMotionBlur);
@@ -118,6 +119,8 @@ export function useAppearanceState(preferences: EditorPreferences) {
 	return {
 		wallpaper,
 		setWallpaper,
+		frame,
+		setFrame,
 		shadowIntensity,
 		setShadowIntensity,
 		backgroundBlur,

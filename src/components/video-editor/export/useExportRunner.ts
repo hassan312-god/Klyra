@@ -1,5 +1,6 @@
 import { useCallback, useRef } from "react";
 import { toast } from "sonner";
+import { extensionHost } from "@/lib/extensions";
 import { getMp4ExportBitrate } from "@/lib/exporter/exportBitrate";
 import { DEFAULT_MP4_CODEC } from "@/lib/exporter/mp4Support";
 import type { ExportSettings } from "@/lib/exporter/types";
@@ -97,6 +98,7 @@ export function useExportRunner(input: ExportRunnerInput) {
 			setExportProgress(null);
 			setExportError(null);
 			clearPendingExportSave();
+			extensionHost.emitEvent({ type: "export:start" });
 			const smokeExportStartedAt = smokeExportConfig.enabled ? performance.now() : null;
 
 			let keepExportDialogOpen = false;
@@ -524,6 +526,7 @@ export function useExportRunner(input: ExportRunnerInput) {
 					window.close();
 				}
 			} finally {
+				extensionHost.emitEvent({ type: "export:complete" });
 				if (exportWasExplicitlyCancelled() && exportRunIdRef.current === exportRunId + 1) {
 					video.currentTime = restoreTime;
 					if (wasPlaying) {

@@ -6,7 +6,6 @@ import {
 	BrowserWindow,
 	desktopCapturer,
 	dialog,
-	webContents as electronWebContents,
 	ipcMain,
 	Menu,
 	nativeImage,
@@ -14,9 +13,11 @@ import {
 	shell,
 	systemPreferences,
 	Tray,
+	webContents as electronWebContents,
 } from "electron";
 import { RECORDINGS_DIR } from "./appPaths";
 import { showCursor } from "./cursorHider";
+import { registerExtensionIpcHandlers } from "./extensions/extensionIpc";
 import { getGpuSwitches } from "./gpuSwitches";
 import {
 	cleanupAllExportStreams,
@@ -1015,6 +1016,8 @@ app.whenReady().then(async () => {
 			}
 		},
 	);
+
+	registerExtensionIpcHandlers();
 
 	if (IS_SMOKE_EXPORT || process.env.KLYRA_DEV_OPEN_RECORDING_INPUT) {
 		await logSmokeExportGpuDiagnostics();

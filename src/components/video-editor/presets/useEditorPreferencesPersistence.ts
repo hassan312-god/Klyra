@@ -22,6 +22,7 @@ export function useEditorPreferencesPersistence({
 	useEffect(() => {
 		saveEditorPreferences({
 			wallpaper: appearance.wallpaper,
+			frame: appearance.frame,
 			shadowIntensity: appearance.shadowIntensity,
 			backgroundBlur: appearance.backgroundBlur,
 			zoomMotionBlur: appearance.zoomMotionBlur,
@@ -74,6 +75,7 @@ export function useEditorPreferencesPersistence({
 		});
 	}, [
 		appearance.wallpaper,
+		appearance.frame,
 		appearance.shadowIntensity,
 		appearance.backgroundBlur,
 		appearance.zoomMotionBlur,

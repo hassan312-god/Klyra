@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useMemo } from "react";
 import { useI18n } from "@/contexts/I18nContext";
 import { useShortcuts } from "@/contexts/ShortcutsContext";
+import { extensionHost } from "@/lib/extensions";
 import { getAspectRatioValue } from "@/utils/aspectRatioUtils";
 import { loadEditorPreferences } from "./editorPreferences";
 import { useEditorExportController } from "./export/useEditorExportController";
@@ -22,6 +23,11 @@ import { useTimelineState } from "./state/useTimelineState";
 import { useNvidiaCudaExportOptIn } from "./useNvidiaCudaExportOptIn";
 
 export default function VideoEditor() {
+	// Activate the extensions bundled with the app once the editor opens (idempotent).
+	useEffect(() => {
+		void extensionHost.autoActivateBuiltins();
+	}, []);
+
 	const { t } = useI18n();
 	const smokeExportConfig = useMemo(
 		() => getSmokeExportConfig(typeof window === "undefined" ? "" : window.location.search),

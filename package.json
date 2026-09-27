@@ -3,16 +3,16 @@
 	"productName": "Klyra",
 	"description": "A free, creator-focused screen recorder with auto-zoom, cursor effects, backgrounds, annotations, and more - built for polished videos out of the box.",
 	"author": "hassan312-god",
-	"homepage": "https://github.com/hassan312-god/record",
+	"homepage": "https://github.com/hassan312-god/Klyra",
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/hassan312-god/record.git"
+		"url": "https://github.com/hassan312-god/Klyra.git"
 	},
 	"bugs": {
-		"url": "https://github.com/hassan312-god/record/issues"
+		"url": "https://github.com/hassan312-god/Klyra/issues"
 	},
 	"private": true,
-	"version": "1.5.0",
+	"version": "1.6.0",
 	"type": "module",
 	"scripts": {
 		"dev": "vite --config vite.config.ts",

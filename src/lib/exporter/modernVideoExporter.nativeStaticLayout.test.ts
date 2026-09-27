@@ -324,6 +324,21 @@ describe("ModernVideoExporter native static-layout eligibility", () => {
 		).toBe("unsupported-cursor-click-effect");
 	});
 
+	it("reports frame overlays as the remaining native overlay blocker", () => {
+		const exporter = createExporter({ frame: "macbook" });
+
+		expect(
+			exporter.getNativeStaticLayoutSkipReason(
+				{
+					audioMode: "copy-source",
+					audioSourcePath: "recording.mp4",
+				},
+				videoInfo,
+				60,
+			),
+		).toBe("unsupported-frame-overlay");
+	});
+
 	it("allows native static-layout with background blur", () => {
 		const exporter = createExporter({ backgroundBlur: 12 });
 
@@ -406,6 +421,7 @@ describe("ModernVideoExporter native static-layout eligibility", () => {
 			annotationRegions: [{ id: "annotation-1", startMs: 0, endMs: 1_000 }],
 			autoCaptions: [{ id: "caption-1", text: "hello", startMs: 0, endMs: 1_000 }],
 			webcam: { enabled: true },
+			frame: "macbook",
 			cropRegion: { x: 0.1, y: 0, width: 0.9, height: 1 },
 		});
 
@@ -425,6 +441,7 @@ describe("ModernVideoExporter native static-layout eligibility", () => {
 			"unsupported-caption-overlay",
 			"native-webcam-style-mismatch",
 			"unsupported-webcam-source",
+			"unsupported-frame-overlay",
 		]);
 	});
 

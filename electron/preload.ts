@@ -1022,4 +1022,15 @@ contextBridge.exposeInMainWorld("electronAPI", {
 		ipcRenderer.on("countdown-tick", listener);
 		return () => ipcRenderer.removeListener("countdown-tick", listener);
 	},
+
+	// ── Extensions ──────────────────────────────────────────────────────
+	extensionsDiscover: () => ipcRenderer.invoke("extensions:discover"),
+	extensionsList: () => ipcRenderer.invoke("extensions:list"),
+	extensionsGet: (id: string) => ipcRenderer.invoke("extensions:get", id),
+	extensionsEnable: (id: string) => ipcRenderer.invoke("extensions:enable", id),
+	extensionsDisable: (id: string) => ipcRenderer.invoke("extensions:disable", id),
+	extensionsInstallFromFolder: () => ipcRenderer.invoke("extensions:install-from-folder"),
+	extensionsUninstall: (id: string) => ipcRenderer.invoke("extensions:uninstall", id),
+	extensionsGetDirectory: () => ipcRenderer.invoke("extensions:get-directory"),
+	extensionsOpenDirectory: () => ipcRenderer.invoke("extensions:open-directory"),
 });

@@ -3,6 +3,32 @@
 All notable changes to Klyra are documented here. Versions follow
 [Semantic Versioning](https://semver.org/).
 
+## 1.6.0
+
+### Added
+- **Extensions are back**: the extension system Recordly removed is restored,
+  including device frames, render hooks in preview *and* export, cursor effects
+  and extension settings panels. Extensions install locally from a folder
+  (Extensions → Add); the online marketplace, which relied on Recordly's
+  servers, is not included. Extensions written for Recordly also load.
+- **Built-in extensions** (off by default, turn them on in their panel):
+  - *Beat Sync Cursor*: a glow pulses around the cursor on every beat of the
+    background music (tempo presets for the six library tracks, or custom BPM).
+  - *Spotlight*: dims the screen except around the cursor.
+  - *Watermark*: your brand or handle in a corner of the video.
+  - *Intro Title*: a title card over the first seconds of the video.
+- **Download website** in `website/`, deployed by Vercel as a static page.
+
+### Changed
+- Contact email is now keitahassan3001@gmail.com; the Discord button is removed.
+- Links point to the renamed `hassan312-god/Klyra` repository.
+
+### Fixed
+- Extension overlays now use the same clock (timeline time) and video duration
+  in the preview and in the exported video.
+- Exported frames with blur annotations now include extension overlays instead
+  of reusing a stale frame.
+
 ## 1.5.0
 
 ### Added
