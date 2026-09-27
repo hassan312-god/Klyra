@@ -61,6 +61,24 @@
 		display: grid; place-items: center; font-weight: 700; color: var(--text); background: linear-gradient(135deg, var(--blue), var(--violet));
 	}
 	.steps strong { color: var(--text); }
+	.version { display: inline-flex; align-items: center; gap: 8px; margin: 0 0 6px; padding: 4px 12px; border-radius: 999px; border: 1px solid var(--line); font-size: 13px; color: var(--muted); }
+	.version strong { color: var(--text); }
+	.version[hidden] { display: none; }
+	.version .dot { width: 8px; height: 8px; border-radius: 50%; background: #34d399; }
+	.releases { max-width: 720px; margin: 0 auto; display: grid; gap: 12px; }
+	.release { border: 1px solid var(--line); border-radius: 16px; padding: 18px 20px; background: rgba(255, 255, 255, 0.025); }
+	.release header { display: flex; flex-wrap: wrap; justify-content: flex-start; align-items: baseline; gap: 10px; padding: 0 0 6px; }
+	.release h3 { margin: 0; font-size: 18px; }
+	.release .date { color: var(--muted); font-size: 13px; }
+	.release .tag { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 999px; background: linear-gradient(90deg, var(--blue), var(--violet)); }
+	.release h4 { margin: 10px 0 4px; font-size: 13px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); }
+	.release ul { margin: 0; padding-left: 20px; color: var(--muted); font-size: 14px; }
+	.release li { margin: 3px 0; }
+	.release li ul { margin-top: 4px; }
+	.release li strong { color: var(--text); }
+	.release .files { margin-top: 12px; display: flex; flex-wrap: wrap; gap: 8px; }
+	.release .files a { font-size: 13px; padding: 6px 12px; border-radius: 8px; border: 1px solid var(--line); text-decoration: none; }
+	.release .files a:hover { background: rgba(255, 255, 255, 0.06); }
 	footer { padding: 40px 0 56px; color: var(--muted); font-size: 13px; text-align: center; border-top: 1px solid var(--line); }
 	footer p { margin: 6px 0; }
 	@media (max-width: 560px) { nav { display: none; } .hero { padding-top: 40px; } }
@@ -72,6 +90,7 @@
 			<a class="brand" href="#"><img src="icon.png" alt="" />Klyra</a>
 			<nav>
 				<a href="#fonctionnalites">Fonctionnalités</a>
+				<a href="#versions">Versions</a>
 				<a href="#installation">Installation</a>
 			</nav>
 		</header>
@@ -81,7 +100,7 @@
 				<img src="icon.png" alt="Logo Klyra" />
 				<h1>Des vidéos de démo <span class="grad">soignées</span>,<br />sans savoir monter.</h1>
 				<p class="lead">Enregistrez votre écran : Klyra ajoute les zooms, lisse le curseur, pose une musique libre de droits et exporte une vidéo prête à publier.</p>
-				<div class="downloads">
+				<div class="downloads" style="margin-bottom:14px">
 					<a class="btn primary" href="/download/windows">
 						<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3 5.5 10.5 4.5v7H3zM11.5 4.3 21 3v8.5h-9.5zM3 12.5h7.5v7L3 18.5zM11.5 12.5H21V21l-9.5-1.3z"/></svg>
 						Télécharger pour Windows
@@ -92,7 +111,8 @@
 					</a>
 					<span class="btn disabled">macOS — bientôt</span>
 				</div>
-				<p class="note">Gratuit · Mises à jour automatiques dans l'application</p>
+				<p id="current-version" class="version" hidden><span class="dot"></span>Vous téléchargez la version <strong id="current-version-number"></strong><span id="current-version-date"></span></p>
+				<p class="note">Gratuit · Mises à jour automatiques dans l'application · <a href="#versions">Nouveautés</a></p>
 			</div>
 
 			<section id="fonctionnalites">
@@ -104,6 +124,13 @@
 					<div class="card"><h3>Curseur en rythme</h3><p>Le curseur pulse au tempo de la musique pour un rendu plus vivant.</p></div>
 					<div class="card"><h3>Extensions</h3><p>Projecteur, filigrane, titre d'intro… et vos propres extensions.</p></div>
 					<div class="card"><h3>Sous-titres automatiques</h3><p>Transcription locale, sans envoyer votre voix sur Internet.</p></div>
+				</div>
+			</section>
+
+			<section id="versions">
+				<h2>Versions et nouveautés</h2>
+				<div id="releases" class="releases">
+					<p class="note" style="text-align:center">Chargement des versions…</p>
 				</div>
 			</section>
 
@@ -124,5 +151,103 @@
 			<p>Contact : <a href="mailto:keitahassan3001@gmail.com">keitahassan3001@gmail.com</a></p>
 		</footer>
 	</div>
+	<script>
+	(function () {
+		var REPO = "hassan312-god/Klyra";
+		var WANTED = [["Windows", /windows.*\.exe$/i], ["Linux", /linux.*\.AppImage$/i]];
+		var dateFmt = new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "long", year: "numeric" });
+		function el(tag, attrs, text) {
+			var node = document.createElement(tag);
+			for (var key in attrs || {}) node.setAttribute(key, attrs[key]);
+			if (text != null) node.textContent = text;
+			return node;
+		}
+		// Renders "**bold**" and "*italic*" from the changelog as text nodes only, never as HTML.
+		function inline(parent, text) {
+			text.split(/(\*\*[^*]+\*\*|\*[^*]+\*)/).forEach(function (part) {
+				if (/^\*\*[^*]+\*\*$/.test(part)) parent.appendChild(el("strong", null, part.slice(2, -2)));
+				else if (/^\*[^*]+\*$/.test(part)) parent.appendChild(el("em", null, part.slice(1, -1)));
+				else if (part) parent.appendChild(document.createTextNode(part));
+			});
+		}
+		// CHANGELOG.md → { "1.7.0": [{ title, items: [{ text, children: [] }] }] }
+		function parseChangelog(markdown) {
+			var versions = {}, current = null, group = null, last = null;
+			markdown.split(/\r?\n/).forEach(function (line) {
+				var v = line.match(/^##\s+v?(\d+\.\d+\.\d+)/);
+				if (v) { current = versions[v[1]] = []; group = last = null; return; }
+				if (!current) return;
+				var h = line.match(/^###\s+(.*)/);
+				if (h) { group = { title: h[1], items: [] }; current.push(group); last = null; return; }
+				if (!group) return;
+				var bullet = line.match(/^-\s+(.*)/);
+				if (bullet) { last = { text: bullet[1], children: [] }; group.items.push(last); return; }
+				var sub = line.match(/^\s{2,}-\s+(.*)/);
+				if (sub && group.items.length) {
+					last = { text: sub[1], children: [] };
+					group.items[group.items.length - 1].children.push(last);
+					return;
+				}
+				if (/^\s+\S/.test(line) && last) last.text += " " + line.trim();
+			});
+			return versions;
+		}
+		function renderItems(items) {
+			var ul = el("ul");
+			items.forEach(function (item) {
+				var li = el("li");
+				inline(li, item.text);
+				if (item.children.length) li.appendChild(renderItems(item.children));
+				ul.appendChild(li);
+			});
+			return ul;
+		}
+		function render(releases, notes) {
+			var list = document.getElementById("releases");
+			list.textContent = "";
+			if (!releases.length) { list.appendChild(el("p", { class: "note" }, "Aucune version publiée pour l'instant.")); return; }
+			releases.forEach(function (release, index) {
+				var version = release.tag_name.replace(/^v/, "");
+				var card = el("article", { class: "release" });
+				var head = el("header");
+				head.appendChild(el("h3", null, "Version " + version));
+				if (index === 0) head.appendChild(el("span", { class: "tag" }, "Dernière version"));
+				head.appendChild(el("span", { class: "date" }, dateFmt.format(new Date(release.published_at))));
+				card.appendChild(head);
+				(notes[version] || []).forEach(function (group) {
+					card.appendChild(el("h4", null, group.title));
+					card.appendChild(renderItems(group.items));
+				});
+				var files = el("div", { class: "files" });
+				WANTED.forEach(function (w) {
+					var asset = (release.assets || []).filter(function (a) { return w[1].test(a.name); })[0];
+					if (asset) files.appendChild(el("a", { href: asset.browser_download_url }, "Télécharger " + w[0] + " (" + Math.round(asset.size / 1048576) + " Mo)"));
+				});
+				if (files.childNodes.length) card.appendChild(files);
+				list.appendChild(card);
+			});
+		}
+		function showCurrent(release) {
+			if (!release) return;
+			document.getElementById("current-version-number").textContent = release.tag_name.replace(/^v/, "");
+			document.getElementById("current-version-date").textContent = " · publiée le " + dateFmt.format(new Date(release.published_at));
+			document.getElementById("current-version").hidden = false;
+		}
+		Promise.all([
+			fetch("https://api.github.com/repos/" + REPO + "/releases?per_page=20").then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); }),
+			fetch("https://raw.githubusercontent.com/" + REPO + "/main/CHANGELOG.md").then(function (r) { return r.ok ? r.text() : ""; }).catch(function () { return ""; })
+		]).then(function (results) {
+			var releases = results[0].filter(function (r) { return !r.draft && !r.prerelease; });
+			showCurrent(releases[0]);
+			render(releases, parseChangelog(results[1]));
+		}).catch(function () {
+			var list = document.getElementById("releases");
+			list.textContent = "";
+			var p = el("p", { class: "note", style: "text-align:center" }, "Impossible de charger la liste. ");
+			p.appendChild(el("a", { href: "https://github.com/" + REPO + "/releases" }, "Voir toutes les versions"));
+			list.appendChild(p);
+		});
+	})();
+	</script>
 </body>
 </html>

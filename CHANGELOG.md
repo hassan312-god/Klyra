@@ -1,73 +1,82 @@
-# Changelog
+# Nouveautés
 
-All notable changes to Klyra are documented here. Versions follow
-[Semantic Versioning](https://semver.org/).
+Toutes les évolutions de Klyra sont notées ici, de la plus récente à la plus
+ancienne. Les numéros de version suivent le
+[versionnage sémantique](https://semver.org/lang/fr/). Ce fichier alimente aussi
+la section « Versions et nouveautés » du site de téléchargement.
 
 ## 1.8.0
 
-### Added
-- **Auto demo from a website** (menu ··· → *Auto demo from a website*): type your
-  site's address, show Klyra the steps once (clicks, typing, Enter, scrolling),
-  then *Play and record*. Klyra opens the site, replays every step with a smooth
-  cursor and records it live; the video opens in the editor with the clicks
-  already in the cursor track, so zooms and click effects work as usual.
-  Steps can be edited, reordered, given pauses, and exported or imported as JSON.
-  Passwords are never recorded.
+### Nouveautés
+- **Démo auto depuis un site** (menu ··· → *Démo auto depuis un site*) : tape
+  l'adresse de ton site, montre une fois les étapes à Klyra (clics, texte,
+  touche Entrée, défilement), puis clique *Lancer et filmer*. Klyra ouvre le
+  site, rejoue chaque étape avec un curseur fluide et filme en direct ; la vidéo
+  s'ouvre dans l'éditeur avec les clics déjà en place, donc les zooms et les
+  effets de clic marchent comme d'habitude.
+- Les étapes se modifient, se réordonnent, acceptent des pauses et s'exportent
+  ou s'importent en fichier. Les mots de passe ne sont jamais enregistrés.
+- Le site de téléchargement affiche la version proposée et l'historique des
+  versions.
 
 ## 1.7.0
 
-### Added
-- **7 new built-in extensions** (off by default, enable them in their panel):
-  - *Click Callouts*: a bubble ("Cliquez ici") pops next to each click.
-  - *End Call-to-Action*: a closing card or full screen with your headline and URL.
-  - *Device Frames*: browser (light/dark), laptop and phone frames.
-  - *Cursor Trail*: a smooth glowing trail behind the cursor.
-  - *Chapters*: an on-screen chapter pill ("0:02 Step 1 | 0:10 Step 2").
-  - *Countdown*: a 3 or 5 second countdown at the start of the video.
-  - *Brand Wallpapers*: 6 Klyra-colored backgrounds.
+### Nouveautés
+- **7 nouvelles extensions intégrées** (désactivées par défaut, à activer dans
+  leur panneau) :
+  - *Légendes de clic* : une bulle (« Cliquez ici ») apparaît à chaque clic.
+  - *Appel à l'action de fin* : une carte ou un plein écran avec ton titre et
+    l'adresse de ton site.
+  - *Cadres d'appareil* : navigateur (clair ou sombre), ordinateur portable et
+    téléphone.
+  - *Traînée du curseur* : une traînée lumineuse et fluide derrière le curseur.
+  - *Chapitres* : une pastille de chapitre à l'écran (« 0:02 Étape 1 | 0:10
+    Étape 2 »).
+  - *Compte à rebours* : 3 ou 5 secondes au début de la vidéo.
+  - *Fonds d'écran de marque* : 6 fonds aux couleurs de Klyra.
 
-### Fixed
-- Render hooks now receive the edited timeline duration, so effects timed from
-  the end of the video line up in preview and export.
-- The cursor trail is time-based and actually populated, identical at any fps.
+### Corrections
+- Les effets calés sur la fin de la vidéo tombent au même moment dans l'aperçu
+  et dans l'export.
+- La traînée du curseur fonctionne vraiment et reste identique quel que soit le
+  nombre d'images par seconde.
 
 ## 1.6.0
 
-### Added
-- **Extensions are back**: the extension system Recordly removed is restored,
-  including device frames, render hooks in preview *and* export, cursor effects
-  and extension settings panels. Extensions install locally from a folder
-  (Extensions → Add); the online marketplace, which relied on Recordly's
-  servers, is not included. Extensions written for Recordly also load.
-- **Built-in extensions** (off by default, turn them on in their panel):
-  - *Beat Sync Cursor*: a glow pulses around the cursor on every beat of the
-    background music (tempo presets for the six library tracks, or custom BPM).
-  - *Spotlight*: dims the screen except around the cursor.
-  - *Watermark*: your brand or handle in a corner of the video.
-  - *Intro Title*: a title card over the first seconds of the video.
-- **Download website** in `website/`, deployed by Vercel as a static page.
+### Nouveautés
+- **Retour des extensions** : effets de curseur, cadres d'appareil, effets
+  dessinés sur la vidéo (dans l'aperçu *et* l'export) et panneaux de réglages.
+  Elles s'installent depuis un dossier (Extensions → Ajouter). Les extensions
+  écrites pour Recordly fonctionnent aussi.
+- **Extensions intégrées** (désactivées par défaut, à activer dans leur
+  panneau) :
+  - *Curseur en rythme* : un halo pulse autour du curseur à chaque temps de la
+    musique (tempo prêt pour les six morceaux de la bibliothèque, ou au choix).
+  - *Projecteur* : assombrit l'écran sauf autour du curseur.
+  - *Filigrane* : ta marque ou ton pseudo dans un coin de la vidéo.
+  - *Titre d'intro* : un carton de titre sur les premières secondes.
+- **Site de téléchargement** : Klyra se télécharge sans passer par GitHub.
 
-### Changed
-- Contact email is now keitahassan3001@gmail.com; the Discord button is removed.
-- Links point to the renamed `hassan312-god/Klyra` repository.
+### Changements
+- Nouvelle adresse de contact : keitahassan3001@gmail.com ; le bouton Discord
+  est retiré.
 
-### Fixed
-- Extension overlays now use the same clock (timeline time) and video duration
-  in the preview and in the exported video.
-- Exported frames with blur annotations now include extension overlays instead
-  of reusing a stale frame.
+### Corrections
+- Les effets des extensions utilisent la même horloge et la même durée dans
+  l'aperçu et dans la vidéo exportée.
+- Les vidéos exportées avec des zones floutées contiennent bien les effets des
+  extensions.
 
 ## 1.5.0
 
-### Added
-- **Music library**: six original, royalty-free background tracks (Calm Focus,
-  Upbeat Product, Lo-fi Chill, Tech Pulse, Corporate Bright, Minimal Piano)
-  available from *Add layer → Music library* in the editor. Tracks are added at
-  35% volume so narration stays on top, and can be used in any exported video,
-  commercial or not, without attribution. They are generated by
-  `scripts/music-library/generate.py`.
+### Nouveautés
+- **Bibliothèque musicale** : six morceaux originaux libres de droits (Calm
+  Focus, Upbeat Product, Lo-fi Chill, Tech Pulse, Corporate Bright, Minimal
+  Piano), dans l'éditeur via *Ajouter un calque → Bibliothèque musicale*. Ils
+  sont ajoutés à 35 % du volume pour laisser la voix au premier plan, et
+  utilisables dans toute vidéo, commerciale ou non, sans mention obligatoire.
 
 ## 1.4.0
 
-- First Klyra release: rebrand of the Recordly codebase with the new Klyra
-  name and icon.
+### Nouveautés
+- Première version de Klyra : nouveau nom, nouvelle icône, basée sur Recordly.
