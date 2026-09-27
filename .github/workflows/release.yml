@@ -55,6 +55,7 @@ jobs:
           REQUESTED_SCOPE: ${{ github.event.inputs.release_scope }}
           RELEASE_TAG_NAME: ${{ github.event.release.tag_name }}
           DISPATCH_TAG_NAME: ${{ github.event.inputs.tag_name }}
+          HAS_MACOS_SIGNING: ${{ secrets.APPLE_SIGNING_CERTIFICATE_P12_BASE64 != '' }}
         run: |
           set -euo pipefail
           if [ "${{ github.event_name }}" = "release" ]; then
@@ -91,9 +92,11 @@ jobs:
               ;;
           esac
 
-          if [ "$IS_PRERELEASE" != "true" ] && [ "$RELEASE_SCOPE" != "all" ]; then
-            echo "Partial platform scope is allowed only for prereleases."
-            exit 1
+          # macOS builds need Apple signing secrets. Without them, publish the
+          # Windows and Linux builds instead of failing the whole release.
+          if [ "$RELEASE_SCOPE" = "all" ] && [ "$HAS_MACOS_SIGNING" != "true" ]; then
+            echo "::warning::macOS signing secrets are not configured; publishing Windows and Linux only."
+            RELEASE_SCOPE="windows-linux"
           fi
 
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
