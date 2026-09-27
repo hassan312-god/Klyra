@@ -33,7 +33,9 @@
 		"addAnnotation": "Annotatie toevoegen (A)"
 	},
 	"audio": {
-		"label": "Audio"
+		"label": "Audio",
+		"musicLibrary": "Muziekbibliotheek",
+		"musicLibraryUnavailable": "Dit nummer kon niet worden geladen."
 	},
 	"addSpeed": "Snelheid toevoegen (S)",
 	"resizeLeft": "Links verkleinen",

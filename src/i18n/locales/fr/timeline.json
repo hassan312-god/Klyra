@@ -33,7 +33,9 @@
 		"addAnnotation": "Ajouter une annotation (A)"
 	},
 	"audio": {
-		"label": "Audio"
+		"label": "Audio",
+		"musicLibrary": "Bibliothèque musicale",
+		"musicLibraryUnavailable": "Impossible de charger ce morceau."
 	},
 	"addSpeed": "Ajouter une vitesse (S)",
 	"resizeLeft": "Redimensionner vers la gauche",

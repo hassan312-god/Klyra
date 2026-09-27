@@ -15,14 +15,19 @@ import {
 	SpeakerX,
 } from "@phosphor-icons/react";
 import type { Dispatch, RefObject, SetStateAction } from "react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
 	DropdownMenuItem,
+	DropdownMenuSub,
+	DropdownMenuSubContent,
+	DropdownMenuSubTrigger,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import type { useI18n } from "@/contexts/I18nContext";
+import { MUSIC_LIBRARY_DEFAULT_VOLUME, MUSIC_LIBRARY_TRACKS } from "@/lib/musicLibrary";
 import { ASPECT_RATIOS, type AspectRatio, getAspectRatioLabel } from "@/utils/aspectRatioUtils";
 import type { useVideoEditorAudio } from "../audio/useVideoEditorAudio";
 import type { CaptionEditTarget } from "../captionEditing";
@@ -111,6 +116,23 @@ export function EditorPreviewPanel(props: Props) {
 		setIsPlaying,
 		setError,
 	} = props;
+
+	const getNextAudioTrackIndex = () =>
+		timeline.audioRegions.length > 0
+			? Math.max(...timeline.audioRegions.map((region) => region.trackIndex ?? 0)) + 1
+			: 0;
+
+	const addMusicLibraryTrack = async (fileName: string) => {
+		const result = await window.electronAPI.resolveMusicLibraryTrack(fileName);
+		if (!result.success || !result.path) {
+			toast.error(t("timeline.audio.musicLibraryUnavailable"));
+			return;
+		}
+		await timelineRef.current?.addAudio(getNextAudioTrackIndex(), {
+			path: result.path,
+			volume: MUSIC_LIBRARY_DEFAULT_VOLUME,
+		});
+	};
 
 	return (
 		<div className="flex min-h-0 flex-1 flex-col gap-3">
@@ -265,6 +287,29 @@ export function EditorPreviewPanel(props: Props) {
 							>
 								{t("timeline.audio.label")}
 							</DropdownMenuItem>
+							<DropdownMenuSub>
+								<DropdownMenuSubTrigger className="cursor-pointer text-muted-foreground hover:bg-foreground/10 hover:text-foreground">
+									{t("timeline.audio.musicLibrary")}
+								</DropdownMenuSubTrigger>
+								<DropdownMenuSubContent className="border-foreground/10 bg-editor-surface-alt">
+									{MUSIC_LIBRARY_TRACKS.map((track) => (
+										<DropdownMenuItem
+											key={track.id}
+											onClick={() =>
+												void addMusicLibraryTrack(track.fileName)
+											}
+											className="cursor-pointer flex-col items-start gap-0 text-muted-foreground hover:bg-foreground/10 hover:text-foreground"
+										>
+											<span className="text-xs font-medium text-foreground">
+												{track.title}
+											</span>
+											<span className="text-[10px] opacity-70">
+												{track.mood} · {track.bpm} BPM
+											</span>
+										</DropdownMenuItem>
+									))}
+								</DropdownMenuSubContent>
+							</DropdownMenuSub>
 						</DropdownMenuContent>
 					</DropdownMenu>
 					<div className="mx-1 h-4 w-px bg-foreground/10" />

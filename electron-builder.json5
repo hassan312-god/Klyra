@@ -41,6 +41,10 @@
     {
       "from": "public/wallpapers",
       "to": "assets/wallpapers"
+    },
+    {
+      "from": "public/music",
+      "to": "assets/music"
     }
   ],
   "publish": [

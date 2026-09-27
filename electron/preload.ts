@@ -707,6 +707,9 @@ contextBridge.exposeInMainWorld("electronAPI", {
 	openAudioFilePicker: () => {
 		return ipcRenderer.invoke("open-audio-file-picker");
 	},
+	resolveMusicLibraryTrack: (fileName: string) => {
+		return ipcRenderer.invoke("resolve-music-library-track", fileName);
+	},
 	openWhisperExecutablePicker: () => {
 		return ipcRenderer.invoke("open-whisper-executable-picker");
 	},

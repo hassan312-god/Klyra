@@ -33,7 +33,9 @@
 		"addAnnotation": "添加注释 (A)"
 	},
 	"audio": {
-		"label": "音频"
+		"label": "音频",
+		"musicLibrary": "音乐库",
+		"musicLibraryUnavailable": "无法加载此曲目。"
 	},
 	"addSpeed": "添加变速 (S)",
 	"resizeLeft": "向左调整",

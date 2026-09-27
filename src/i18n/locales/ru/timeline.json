@@ -33,7 +33,9 @@
 		"addAnnotation": "Добавить аннотацию (A)"
 	},
 	"audio": {
-		"label": "Аудио"
+		"label": "Аудио",
+		"musicLibrary": "Музыкальная библиотека",
+		"musicLibraryUnavailable": "Не удалось загрузить этот трек."
 	},
 	"addSpeed": "Скорость (S)",
 	"resizeLeft": "Изменить размер слева",
