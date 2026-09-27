@@ -1,0 +1,11 @@
+{
+	"id": "dev.klyra.countdown",
+	"name": "Countdown",
+	"version": "1.0.0",
+	"description": "Opens the video with a 3-2-1 countdown over the first seconds.",
+	"author": "Klyra",
+	"license": "AGPL-3.0",
+	"icon": "Timer",
+	"main": "index.js",
+	"permissions": ["render", "ui"]
+}

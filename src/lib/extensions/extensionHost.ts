@@ -149,6 +149,7 @@ export class ExtensionHost {
 	private iconPathCache = new Map<string, Path2D>();
 
 	// Shared playback/project state — set by the app, queried by extensions
+	private _timelineDurationMs: number | null = null;
 	private _videoInfo: { width: number; height: number; durationMs: number; fps: number } | null =
 		null;
 	private _videoLayout: {
@@ -447,6 +448,19 @@ export class ExtensionHost {
 		info: { width: number; height: number; durationMs: number; fps: number } | null,
 	): void {
 		this._videoInfo = info;
+	}
+
+	/** Length of the edited timeline (after clip edits), as rendered in preview and export. */
+	setTimelineDurationMs(durationMs: number | null): void {
+		this._timelineDurationMs = durationMs;
+	}
+
+	/**
+	 * Duration handed to render hooks. Hooks receive timeline time, so they get the
+	 * timeline length; fall back to the source video length before it is known.
+	 */
+	getRenderHookDurationMs(): number {
+		return this._timelineDurationMs ?? this._videoInfo?.durationMs ?? 0;
 	}
 
 	setVideoLayout(

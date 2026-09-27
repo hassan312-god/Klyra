@@ -90,6 +90,7 @@ import {
 	DEFAULT_ZOOM_OUT_EASING,
 	findClipAtTimelineTime,
 	getDefaultCaptionFontFamily,
+	getTimelineDurationMs,
 	mapTimelineTimeToSourceTime,
 	type Padding,
 	type WebcamOverlaySettings,
@@ -1833,6 +1834,21 @@ const VideoPlayback = forwardRef<VideoPlaybackRef, VideoPlaybackProps>(
 			cursorSwayRef.current = cursorSway;
 		}, [cursorSway]);
 
+		// Render hooks run on timeline time, so extensions need the edited timeline's length.
+		const syncTimelineDurationForExtensions = useCallback(() => {
+			const sourceDurationMs = extensionHost.getVideoInfoSnapshot()?.durationMs ?? 0;
+			extensionHost.setTimelineDurationMs(
+				getTimelineDurationMs(clipRegionsRef.current, sourceDurationMs),
+			);
+		}, []);
+
+		useEffect(() => {
+			const sourceDurationMs = extensionHost.getVideoInfoSnapshot()?.durationMs ?? 0;
+			extensionHost.setTimelineDurationMs(
+				getTimelineDurationMs(clipRegions, sourceDurationMs),
+			);
+		}, [clipRegions]);
+
 		useEffect(() => {
 			const timeMs = currentTime * 1000;
 			currentTimeRef.current = timeMs;
@@ -2533,7 +2549,6 @@ const VideoPlayback = forwardRef<VideoPlaybackRef, VideoPlaybackProps>(
 
 						const maskRect = baseMaskRef.current;
 						const animationState = animationStateRef.current;
-						const videoInfo = extensionHost.getVideoInfoSnapshot();
 						const rawCursor = getCursorPositionAtTime(
 							cursorTelemetryRef.current,
 							timeMs,
@@ -2549,7 +2564,7 @@ const VideoPlayback = forwardRef<VideoPlaybackRef, VideoPlaybackProps>(
 							// Timeline time, like export (which renders timeline effects): time-based
 							// effects such as beat-synced visuals must line up with the music track.
 							timeMs: timelineTimeRef.current * 1000,
-							durationMs: videoInfo?.durationMs ?? 0,
+							durationMs: extensionHost.getRenderHookDurationMs(),
 							cursor: smoothedCursorForHooks
 								? {
 										cx: smoothedCursorForHooks.cx,
@@ -2759,6 +2774,7 @@ const VideoPlayback = forwardRef<VideoPlaybackRef, VideoPlaybackProps>(
 				durationMs: Number.isFinite(video.duration) ? video.duration * 1000 : 0,
 				fps: 60, // Not available from HTMLVideoElement; default to 60
 			});
+			syncTimelineDurationForExtensions();
 			const targetTime = clampMediaTimeToDuration(
 				currentTime,
 				Number.isFinite(video.duration) ? video.duration : null,

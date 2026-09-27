@@ -3,6 +3,23 @@
 All notable changes to Klyra are documented here. Versions follow
 [Semantic Versioning](https://semver.org/).
 
+## 1.7.0
+
+### Added
+- **7 new built-in extensions** (off by default, enable them in their panel):
+  - *Click Callouts*: a bubble ("Cliquez ici") pops next to each click.
+  - *End Call-to-Action*: a closing card or full screen with your headline and URL.
+  - *Device Frames*: browser (light/dark), laptop and phone frames.
+  - *Cursor Trail*: a smooth glowing trail behind the cursor.
+  - *Chapters*: an on-screen chapter pill ("0:02 Step 1 | 0:10 Step 2").
+  - *Countdown*: a 3 or 5 second countdown at the start of the video.
+  - *Brand Wallpapers*: 6 Klyra-colored backgrounds.
+
+### Fixed
+- Render hooks now receive the edited timeline duration, so effects timed from
+  the end of the video line up in preview and export.
+- The cursor trail is time-based and actually populated, identical at any fps.
+
 ## 1.6.0
 
 ### Added

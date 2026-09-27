@@ -135,7 +135,7 @@ export const DEFAULT_CURSOR_CONFIG: CursorRenderConfig = {
 	minViewportScale: MIN_CURSOR_VIEWPORT_SCALE,
 	dotColor: 0xffffff,
 	dotAlpha: 0.95,
-	trailLength: 0,
+	trailLength: 240,
 	smoothingFactor: 0.18,
 	springTuning: {
 		stiffnessMultiplier: 1,
@@ -1049,10 +1049,18 @@ function getCursorVisualState(
 /**
  * Manages a smoothed cursor state that chases the interpolated target.
  */
+/**
+ * How far back the cursor trail reaches. The trail is bounded by time, not by
+ * frame count, so it spans the same path in the preview and in exports that
+ * render at a different frame rate.
+ */
+export const CURSOR_TRAIL_WINDOW_MS = 400;
+
 export class SmoothedCursorState {
 	public x = 0.5;
 	public y = 0.5;
-	public trail: Array<{ x: number; y: number }> = [];
+	/** Recent positions, newest first, covering the last CURSOR_TRAIL_WINDOW_MS. */
+	public trail: Array<{ x: number; y: number; timeMs: number }> = [];
 	private smoothingFactor: number;
 	private springTuning: CursorSpringTuning;
 	private trailLength: number;
@@ -1090,7 +1098,13 @@ export class SmoothedCursorState {
 			return;
 		}
 
-		this.trail.unshift({ x: this.x, y: this.y });
+		this.trail.unshift({ x: this.x, y: this.y, timeMs: this.lastTimeMs ?? timeMs });
+		while (
+			this.trail.length > 0 &&
+			this.trail[this.trail.length - 1].timeMs < timeMs - CURSOR_TRAIL_WINDOW_MS
+		) {
+			this.trail.pop();
+		}
 		if (this.trail.length > this.trailLength) {
 			this.trail.length = this.trailLength;
 		}
