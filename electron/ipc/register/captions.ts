@@ -1,3 +1,4 @@
+import { existsSync } from "node:fs";
 import path from "node:path";
 import { dialog, ipcMain } from "electron";
 import { generateAutoCaptionsFromVideo } from "../captions/generate";
@@ -8,7 +9,8 @@ import {
 	sendWhisperModelDownloadProgress,
 } from "../captions/whisper";
 import { LEGACY_PROJECT_FILE_EXTENSIONS, PROJECT_FILE_EXTENSION } from "../constants";
-import { hasProjectFileExtension, loadProjectFromPath } from "../project/manager";
+import { isMusicLibraryFileName } from "../../../src/lib/musicLibrary";
+import { getAssetRootPath, hasProjectFileExtension, loadProjectFromPath } from "../project/manager";
 import { setCurrentProjectPath } from "../state";
 import { approveUserPath, getRecordingsDir } from "../utils";
 
@@ -77,6 +79,22 @@ export function registerCaptionHandlers() {
 				error: String(error),
 			};
 		}
+	});
+
+	ipcMain.handle("resolve-music-library-track", (_, fileName: unknown) => {
+		// Only names from the bundled catalogue are accepted, so a renderer can
+		// never use this to reach arbitrary files.
+		if (typeof fileName !== "string" || !isMusicLibraryFileName(fileName)) {
+			return { success: false, message: "Unknown music library track" };
+		}
+
+		const trackPath = path.join(getAssetRootPath(), "music", fileName);
+		if (!existsSync(trackPath)) {
+			return { success: false, message: "Music library track is missing" };
+		}
+
+		approveUserPath(trackPath);
+		return { success: true, path: trackPath };
 	});
 
 	ipcMain.handle("open-audio-file-picker", async () => {

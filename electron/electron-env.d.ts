@@ -681,6 +681,9 @@ interface Window {
 			error?: string;
 		}>;
 		openAudioFilePicker: () => Promise<{ success: boolean; path?: string; canceled?: boolean }>;
+		resolveMusicLibraryTrack: (
+			fileName: string,
+		) => Promise<{ success: boolean; path?: string; message?: string }>;
 		openWhisperExecutablePicker: () => Promise<{
 			success: boolean;
 			path?: string;

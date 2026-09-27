@@ -9,6 +9,12 @@ interface AudioFilePickerResult {
 	path?: string;
 }
 
+/** A known audio file to add directly, skipping the file picker. */
+export interface PresetAudioSource {
+	path: string;
+	volume?: number;
+}
+
 interface TimelineAudioActionsDeps {
 	openFilePicker: () => Promise<AudioFilePickerResult | null | undefined>;
 	probeAudioDurationMs: (audioPath: string) => Promise<number>;
@@ -28,6 +34,7 @@ interface UseTimelineAudioActionsParams {
 		span: { start: number; end: number },
 		audioPath: string,
 		trackIndex?: number,
+		volume?: number,
 	) => void;
 	deps?: Partial<TimelineAudioActionsDeps>;
 }
@@ -87,17 +94,20 @@ export function useTimelineAudioActions({
 	const deps = useMemo(() => buildTimelineAudioActionsDeps(depsOverrides), [depsOverrides]);
 
 	const handleAddAudio = useCallback(
-		async (preferredTrackIndex?: number) => {
+		async (preferredTrackIndex?: number, preset?: PresetAudioSource) => {
 			if (!videoDuration || videoDuration === 0 || totalMs === 0 || !onAudioAdded) {
 				return;
 			}
 
-			const result = await deps.openFilePicker();
-			if (!result?.success || !result.path) {
-				return;
+			let audioPath = preset?.path;
+			if (!audioPath) {
+				const result = await deps.openFilePicker();
+				if (!result?.success || !result.path) {
+					return;
+				}
+				audioPath = result.path;
 			}
 
-			const audioPath = result.path;
 			const audioDurationMs = await deps.probeAudioDurationMs(audioPath);
 			if (audioDurationMs <= 0) {
 				deps.reportError(
@@ -135,6 +145,7 @@ export function useTimelineAudioActions({
 				{ start: startPos, end: startPos + placement.durationMs },
 				audioPath,
 				placement.trackIndex,
+				preset?.volume,
 			);
 		},
 		[videoDuration, totalMs, onAudioAdded, deps, currentTimeMs, audioRegions],

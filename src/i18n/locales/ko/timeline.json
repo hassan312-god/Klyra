@@ -33,7 +33,9 @@
 		"addAnnotation": "주석 추가 (A)"
 	},
 	"audio": {
-		"label": "오디오"
+		"label": "오디오",
+		"musicLibrary": "음악 라이브러리",
+		"musicLibraryUnavailable": "이 트랙을 불러올 수 없습니다."
 	},
 	"addSpeed": "속도 추가 (S)",
 	"resizeLeft": "왼쪽 크기 조절",

@@ -25,6 +25,7 @@ import TimelineWrapper from "./components/wrapper/TimelineWrapper";
 import { calculateTimelineScale } from "./core/time";
 import { useTimelineAudioPeaks } from "./hooks/useTimelineAudioPeaks";
 import { useTimelineEditorRuntime } from "./hooks/useTimelineEditorRuntime";
+import type { PresetAudioSource } from "./hooks/actions/useTimelineAudioActions";
 import { useTimelineRange } from "./hooks/useTimelineRange";
 import {
 	buildSourceSidecarPathCandidates,
@@ -64,7 +65,7 @@ export interface TimelineEditorProps {
 	speedRegions?: SpeedRegion[];
 	onSpeedSpanChange?: (id: string, span: Span) => void;
 	audioRegions?: AudioRegion[];
-	onAudioAdded?: (span: Span, audioPath: string, trackIndex?: number) => void;
+	onAudioAdded?: (span: Span, audioPath: string, trackIndex?: number, volume?: number) => void;
 	onAudioSpanChange?: (id: string, span: Span, trackIndex?: number) => void;
 	onAudioDelete?: (id: string) => void;
 	selectedAudioId?: string | null;
@@ -108,7 +109,7 @@ export interface TimelineEditorHandle {
 	suggestZooms: () => void;
 	splitClip: () => void;
 	addAnnotation: (trackIndex?: number) => void;
-	addAudio: (trackIndex?: number) => Promise<void>;
+	addAudio: (trackIndex?: number, preset?: PresetAudioSource) => Promise<void>;
 	keyframes: { id: string; time: number }[];
 }
 
