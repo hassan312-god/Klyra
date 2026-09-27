@@ -1,0 +1,11 @@
+{
+	"id": "dev.klyra.device-frames",
+	"name": "Device Frames",
+	"version": "1.0.0",
+	"description": "Browser window, laptop and phone frames drawn around your recording. Pick one in Scene → Frame.",
+	"author": "Klyra",
+	"license": "AGPL-3.0",
+	"icon": "Browser",
+	"main": "index.js",
+	"permissions": ["ui"]
+}

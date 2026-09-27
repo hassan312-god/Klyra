@@ -3122,7 +3122,7 @@ export class FrameRenderer {
 			width: this.config.width,
 			height: this.config.height,
 			timeMs,
-			durationMs: extensionHost.getVideoInfoSnapshot()?.durationMs ?? 0,
+			durationMs: extensionHost.getRenderHookDurationMs(),
 			cursor: smoothedCursor
 				? {
 						cx: smoothedCursor.cx,

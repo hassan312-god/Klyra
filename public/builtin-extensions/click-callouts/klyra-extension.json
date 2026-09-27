@@ -1,0 +1,11 @@
+{
+	"id": "dev.klyra.click-callouts",
+	"name": "Click Callouts",
+	"version": "1.0.0",
+	"description": "Pops a small speech bubble (\"Click here\") next to the cursor every time you click.",
+	"author": "Klyra",
+	"license": "AGPL-3.0",
+	"icon": "ChatCircleDots",
+	"main": "index.js",
+	"permissions": ["cursor", "ui"]
+}

@@ -1,0 +1,11 @@
+{
+	"id": "dev.klyra.chapters",
+	"name": "Chapters",
+	"version": "1.0.0",
+	"description": "Shows a section title at chosen moments, such as \"Step 1: create an account\".",
+	"author": "Klyra",
+	"license": "AGPL-3.0",
+	"icon": "ListNumbers",
+	"main": "index.js",
+	"permissions": ["render", "ui"]
+}

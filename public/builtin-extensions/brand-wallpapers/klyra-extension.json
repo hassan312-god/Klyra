@@ -1,0 +1,11 @@
+{
+	"id": "dev.klyra.brand-wallpapers",
+	"name": "Brand Wallpapers",
+	"version": "1.0.0",
+	"description": "Six backgrounds in Klyra's colors (Aurora, Midnight, Sunset, Ocean, Mint and Graphite). Pick one in Scene → Background.",
+	"author": "Klyra",
+	"license": "AGPL-3.0",
+	"icon": "Palette",
+	"main": "index.js",
+	"permissions": ["assets", "ui"]
+}

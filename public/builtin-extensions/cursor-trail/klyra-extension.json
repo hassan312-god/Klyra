@@ -1,0 +1,11 @@
+{
+	"id": "dev.klyra.cursor-trail",
+	"name": "Cursor Trail",
+	"version": "1.0.0",
+	"description": "Draws a glowing trail behind the cursor as it moves.",
+	"author": "Klyra",
+	"license": "AGPL-3.0",
+	"icon": "Sparkle",
+	"main": "index.js",
+	"permissions": ["render", "cursor", "ui"]
+}

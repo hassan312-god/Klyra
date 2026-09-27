@@ -1,0 +1,11 @@
+{
+	"id": "dev.klyra.end-cta",
+	"name": "End Call to Action",
+	"version": "1.0.0",
+	"description": "Ends your video with a call to action, such as \"Try it free at mysite.com\", over the last seconds.",
+	"author": "Klyra",
+	"license": "AGPL-3.0",
+	"icon": "MegaphoneSimple",
+	"main": "index.js",
+	"permissions": ["render", "ui"]
+}
